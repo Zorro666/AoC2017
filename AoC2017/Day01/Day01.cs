@@ -84,7 +84,7 @@ namespace Day01
             {
                 var result2 = CaptchaSum2;
                 Console.WriteLine($"Day01 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 1508;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
