@@ -79,9 +79,9 @@ namespace Day02
             }
             else
             {
-                var result2 = -123;
+                var result2 = Checksum2;
                 Console.WriteLine($"Day02 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 197;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -136,6 +136,55 @@ namespace Day02
                 return sum;
             }
         }
+
+        public static long Checksum2
+        {
+            get
+            {
+                var sum = 0L;
+                for (var row = 0; row < sRowsCount; ++row)
+                {
+                    var result = 0L;
+                    for (var col = 0; col < sColumnsCounts[row] - 1; ++col)
+                    {
+                        var val1 = sCells[row, col];
+                        for (var col2 = col + 1; col2 < sColumnsCounts[row]; ++col2)
+                        {
+                            var val2 = sCells[row, col2];
+                            if (val1 > val2)
+                            {
+                                if ((val1 % val2) == 0)
+                                {
+                                    if (result != 0)
+                                    {
+                                        throw new InvalidProgramException($"Error multiple divisors found for row {row}");
+                                    }
+                                    result = val1 / val2;
+                                }
+                            }
+                            else if (val2 > val1)
+                            {
+                                if ((val2 % val1) == 0)
+                                {
+                                    if (result != 0)
+                                    {
+                                        throw new InvalidProgramException($"Error multiple divisors found for row {row}");
+                                    }
+                                    result = val2 / val1;
+                                }
+                            }
+                        }
+                    }
+                    if (result == 0)
+                    {
+                        throw new InvalidProgramException($"Error no divisor found for row {row}");
+                    }
+                    sum += result;
+                }
+                return sum;
+            }
+        }
+
         public static void Run()
         {
             Console.WriteLine("Day02 : Start");
