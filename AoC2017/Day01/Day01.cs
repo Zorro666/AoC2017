@@ -36,20 +36,45 @@ For example:
 91212129 produces 9 because the only digit that matches the next one is the last digit, 9.
 What is the solution to your captcha?
 
+Your puzzle answer was 1049.
+
+--- Part Two ---
+
+You notice a progress bar that jumps to 50% completion.
+Apparently, the door isn't yet satisfied, but it did emit a star as encouragement.
+The instructions change:
+
+Now, instead of considering the next digit, it wants you to consider the digit halfway around the circular list.
+That is, if your list contains 10 items, only include a digit in your sum if the digit 10/2 = 5 steps forward matches it.
+Fortunately, your list has an even number of elements.
+
+For example:
+
+1212 produces 6: the list contains 4 items, and all four digits match the digit 2 items ahead.
+1221 produces 0, because every comparison is between a 1 and a 2.
+123425 produces 4, because both 2s match each other, but no other digit has a match.
+123123 produces 12.
+12131415 produces 4.
+
+What is the solution to your new captcha?
+
 */
 
 namespace Day01
 {
     class Program
     {
+        static string sCaptcha;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
+            Parse(lines);
             if (part1)
             {
-                long result1 = -666;
+                var result1 = CaptchaSum;
                 Console.WriteLine($"Day01 : Result1 {result1}");
-                long expected = 280;
+                var expected = 1049;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -57,13 +82,60 @@ namespace Day01
             }
             else
             {
-                long result2 = -123;
+                var result2 = -123;
                 Console.WriteLine($"Day01 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
                 }
+            }
+        }
+
+        public static void Parse(string[] lines)
+        {
+            sCaptcha = "";
+            foreach (var line in lines)
+            {
+                sCaptcha += line;
+            }
+        }
+
+        public static long CaptchaSum
+        {
+            get
+            {
+                var sum = 0;
+                for (var i = 0; i < sCaptcha.Length; ++i)
+                {
+                    var thisC = sCaptcha[i];
+                    var nextI = (i + 1) % sCaptcha.Length;
+                    var nextC = sCaptcha[nextI];
+                    if (thisC == nextC)
+                    {
+                        sum += thisC - '0';
+                    }
+                }
+                return sum;
+            }
+        }
+
+        public static long CaptchaSum2
+        {
+            get
+            {
+                var sum = 0;
+                for (var i = 0; i < sCaptcha.Length; ++i)
+                {
+                    var thisC = sCaptcha[i];
+                    var nextI = (i + 1) % sCaptcha.Length;
+                    var nextC = sCaptcha[nextI];
+                    if (thisC == nextC)
+                    {
+                        sum += thisC - '0';
+                    }
+                }
+                return sum;
             }
         }
 
