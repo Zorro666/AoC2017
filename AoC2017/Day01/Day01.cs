@@ -82,13 +82,17 @@ namespace Day01
             }
             else
             {
-                var result2 = -123;
+                var result2 = CaptchaSum2;
                 Console.WriteLine($"Day01 : Result2 {result2}");
                 var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
                 }
+            }
+            if (sCaptcha.Length % 2 != 0)
+            {
+                throw new InvalidProgramException($"sCaptcha source must be even length {sCaptcha.Length}");
             }
         }
 
@@ -125,10 +129,11 @@ namespace Day01
             get
             {
                 var sum = 0;
+                var nextOffset = sCaptcha.Length / 2;
                 for (var i = 0; i < sCaptcha.Length; ++i)
                 {
                     var thisC = sCaptcha[i];
-                    var nextI = (i + 1) % sCaptcha.Length;
+                    var nextI = (i + nextOffset) % sCaptcha.Length;
                     var nextC = sCaptcha[nextI];
                     if (thisC == nextC)
                     {
