@@ -6,10 +6,17 @@ namespace Day06
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day06(string directions, int expected)
+        [TestCase("0  2   7   0", 5)]
+        public void InfiniteLoop(string start, int expected)
         {
-            Assert.Fail();
+            Assert.That(Program.InfiniteLoop(start).stepCount, Is.EqualTo(expected));
+        }
+
+        [Test]
+        [TestCase("0  2   7   0", 4)]
+        public void InfiniteLoop2(string start, int expected)
+        {
+            Assert.That(Program.InfiniteLoop(start).loop, Is.EqualTo(expected));
         }
     }
 }

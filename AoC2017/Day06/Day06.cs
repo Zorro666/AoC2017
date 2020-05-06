@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 /*
 
@@ -35,6 +36,18 @@ The infinite loop is detected after the fifth block redistribution cycle, and so
 
 Given the initial block counts in your puzzle input, how many redistribution cycles must be completed before a configuration is produced that has been seen before?
 
+Your puzzle answer was 7864.
+
+--- Part Two ---
+
+Out of curiosity, the debugger would also like to know the size of the loop: 
+starting from a state that has already been seen, 
+how many block redistribution cycles must be performed before that same state is seen again?
+
+In the example above, 2 4 1 2 is seen again after four cycles, and so the answer in that example would be 4.
+
+How many cycles are in the infinite loop that arises from the configuration in your puzzle input?
+
 */
 
 namespace Day06
@@ -44,11 +57,17 @@ namespace Day06
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
+            if (lines.Length != 1)
+            {
+                throw new InvalidProgramException($"Invalid input expected a single line got {lines.Length}");
+            }
+            var start = lines[0];
+
             if (part1)
             {
-                long result1 = -666;
+                var result1 = InfiniteLoop(start).stepCount;
                 Console.WriteLine($"Day06 : Result1 {result1}");
-                long expected = 280;
+                var expected = 7864;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -56,14 +75,77 @@ namespace Day06
             }
             else
             {
-                long result2 = -123;
+                var result2 = InfiniteLoop(start).loop;
                 Console.WriteLine($"Day06 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1695;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
                 }
             }
+        }
+
+        public static (int stepCount, int loop) InfiniteLoop(string start)
+        {
+            var tokens = start.Trim().Split(new char[] { }, StringSplitOptions.RemoveEmptyEntries);
+            var binCount = tokens.Length;
+            var values = new int[binCount];
+            for (var i = 0; i < binCount; ++i)
+            {
+                var value = byte.Parse(tokens[i]);
+                values[i] = value;
+            }
+
+            var stepCount = 0;
+            var previousValues = new List<int[]>(10000);
+            do
+            {
+                for (var i = 0; i < previousValues.Count; ++i)
+                {
+                    var previousValue = previousValues[i];
+                    bool theSame = true;
+                    for (var j = 0; j < binCount; ++j)
+                    {
+                        if (values[j] != previousValue[j])
+                        {
+                            theSame = false;
+                            break;
+                        }
+                    }
+                    if (theSame)
+                    {
+                        return (stepCount, stepCount - i);
+                    }
+                }
+
+                var newValues = new int[binCount];
+                var maxValue = int.MinValue;
+                var startIndex = -1;
+                for (var i = 0; i < binCount; ++i)
+                {
+                    var value = values[i];
+                    newValues[i] = value;
+                    if (value > maxValue)
+                    {
+                        startIndex = i;
+                        maxValue = value;
+                    }
+                }
+                previousValues.Add(newValues);
+
+                values[startIndex] = 0;
+                var giveOut = maxValue;
+                var index = startIndex;
+                while (giveOut > 0)
+                {
+                    index = (index + 1) % binCount;
+                    ++values[index];
+                    --giveOut;
+                }
+                ++stepCount;
+            } while (stepCount < 10000);
+
+            return (-1, -1);
         }
 
         public static void Run()
