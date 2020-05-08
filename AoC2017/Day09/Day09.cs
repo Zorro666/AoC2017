@@ -58,6 +58,25 @@ Each group is assigned a score which is one more than the score of the group tha
 
 What is the total score for all groups in your input?
 
+Your puzzle answer was 11089.
+
+--- Part Two ---
+
+Now, you're ready to remove the garbage.
+
+To prove you've removed it, you need to count all of the characters within the garbage. 
+The leading and trailing < and > don't count, nor do any canceled characters or the ! doing the canceling.
+
+<>, 0 characters.
+<random characters>, 17 characters.
+<<<<>, 3 characters.
+<{!>}>, 2 characters.
+<!!>, 0 characters.
+<!!!>>, 0 characters.
+<{o"i!a,<{i<a>, 10 characters.
+
+How many non-canceled characters are within the garbage in your puzzle input?
+
 */
 
 namespace Day09
@@ -77,7 +96,7 @@ namespace Day09
             {
                 var result1 = Score(input);
                 Console.WriteLine($"Day09 : Result1 {result1}");
-                var expected = 280;
+                var expected = 11089;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -85,9 +104,9 @@ namespace Day09
             }
             else
             {
-                var result2 = -123;
+                var result2 = CountGarbage(input);
                 Console.WriteLine($"Day09 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 5288;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -97,7 +116,82 @@ namespace Day09
 
         public static long Score(string input)
         {
-            return long.MinValue;
+            int depth = 0;
+            bool ignoreNextChar = false;
+            bool inGarbage = false;
+            var groupCount = 0L;
+            foreach (var c in input.Trim())
+            {
+                if (ignoreNextChar)
+                {
+                    ignoreNextChar = false;
+                    continue;
+                }
+                if (c == '!')
+                {
+                    ignoreNextChar = true;
+                    continue;
+                }
+                if (inGarbage)
+                {
+                    if (c == '>')
+                    {
+                        inGarbage = false;
+                    }
+                    continue;
+                }
+                if (c == '<')
+                {
+                    inGarbage = true;
+                }
+                else if (c == '{')
+                {
+                    ++depth;
+                }
+                else if (c == '}')
+                {
+                    groupCount += depth;
+                    --depth;
+                }
+            }
+            return groupCount;
+        }
+
+        public static long CountGarbage(string input)
+        {
+            long garbageCount = 0L;
+            bool ignoreNextChar = false;
+            bool inGarbage = false;
+            foreach (var c in input.Trim())
+            {
+                if (ignoreNextChar)
+                {
+                    ignoreNextChar = false;
+                    continue;
+                }
+                if (c == '!')
+                {
+                    ignoreNextChar = true;
+                    continue;
+                }
+                if (inGarbage)
+                {
+                    if (c == '>')
+                    {
+                        inGarbage = false;
+                    }
+                    else
+                    {
+                        ++garbageCount;
+                    }
+                    continue;
+                }
+                if (c == '<')
+                {
+                    inGarbage = true;
+                }
+            }
+            return garbageCount;
         }
 
         public static void Run()

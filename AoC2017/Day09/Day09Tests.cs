@@ -18,5 +18,17 @@ namespace Day09
         {
             Assert.That(Program.Score(group), Is.EqualTo(expected));
         }
+
+        [TestCase("<>", 0)]
+        [TestCase("<random characters>", 17)]
+        [TestCase("<<<<>", 3)]
+        [TestCase("<{!>}>", 2)]
+        [TestCase("<!!>", 0)]
+        [TestCase("<!!!>>", 0)]
+        [TestCase("<{o\"i!a,<{i<a>", 10)]
+        public void CountGarbage(string group, int expected)
+        {
+            Assert.That(Program.CountGarbage(group), Is.EqualTo(expected));
+        }
     }
 }
