@@ -6,10 +6,25 @@ namespace Day07
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day07(string directions, int expected)
+        [TestCase(new string[] {
+"pbga (66)",
+"xhth (57)",
+"ebii (61)",
+"havc (66)",
+"ktlj (57)",
+"fwft (72) -> ktlj, cntj, xhth",
+"qoyq (66)",
+"padx (45) -> pbga, havc, qoyq",
+"tknk (41) -> ugml, padx, fwft",
+"jptl (61)",
+"ugml (68) -> gyxo, ebii, jptl",
+"gyxo (61)",
+"cntj (57)"
+        }, "tknk", TestName = "BottomProgram tknk")]
+        public void BottomProgram(string[] program, string expected)
         {
-            Assert.Fail();
+            Program.Parse(program);
+            Assert.That(Program.BottomProgram, Is.EqualTo(expected));
         }
     }
 }
