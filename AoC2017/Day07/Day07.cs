@@ -124,9 +124,9 @@ namespace Day07
             }
             else
             {
-                var result2 = -123;
+                var result2 = BalanceTower;
                 Console.WriteLine($"Day07 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 256;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -235,6 +235,8 @@ namespace Day07
 
         public static void ComputeBalanceTower()
         {
+            var brokenNode = int.MinValue;
+            var unbalancedAmount = 0;
             for (var d = sMaxDepth; d >= 0; --d)
             {
                 for (var i = 0; i < sProgramCount; ++i)
@@ -242,19 +244,95 @@ namespace Day07
                     if (sDepths[i] == d)
                     {
                         sTotalWeights[i] = sWeights[i];
+                        var expectedChildWeight = int.MinValue;
                         for (var c = 0; c < sChildrenCounts[i]; ++c)
                         {
                             var childName = sChildren[i, c];
                             var childIndex = FindProgram(childName);
+                            var childWeight = sTotalWeights[childIndex];
                             sTotalWeights[i] += sTotalWeights[childIndex];
+                            if (expectedChildWeight == int.MinValue)
+                            {
+                                expectedChildWeight = childWeight;
+                            }
+                            if (expectedChildWeight != childWeight)
+                            {
+                                if (brokenNode == int.MinValue)
+                                {
+                                    brokenNode = i;
+                                    unbalancedAmount = expectedChildWeight - childWeight;
+                                }
+                                Console.WriteLine($"Unbalanced Node '{sNames[i]}' W:{sWeights[i]} TW:{sTotalWeights[i]} Expected:{expectedChildWeight} Got:{childWeight}");
+                                if (unbalancedAmount != (expectedChildWeight - childWeight))
+                                {
+                                    throw new InvalidProgramException($"Unbalanced amount does not match '{sNames[i]}' Expected:{unbalancedAmount} Got:{expectedChildWeight - childWeight}");
+                                }
+                            }
                         }
                     }
                 }
             }
-            for (var i = 0; i < sProgramCount; ++i)
+
+            Console.WriteLine($"Broken Node '{sNames[brokenNode]}' W:{sWeights[brokenNode]} TW:{sTotalWeights[brokenNode]}");
+            var badChildIndex = int.MinValue;
+            for (var c1 = 0; c1 < sChildrenCounts[brokenNode]; ++c1)
             {
-                Console.WriteLine($"'{sNames[i]}' W:{sWeights[i]} TW:{sTotalWeights[i]}");
+                var child1Name = sChildren[brokenNode, c1];
+                var child1Index = FindProgram(child1Name);
+                var child1Weight = sTotalWeights[child1Index];
+                var countMatches = 0;
+                for (var c2 = 0; c2 < sChildrenCounts[brokenNode]; ++c2)
+                {
+                    if (c2 == c1)
+                    {
+                        continue;
+                    }
+                    var child2Name = sChildren[brokenNode, c2];
+                    var child2Index = FindProgram(child2Name);
+                    var child2Weight = sTotalWeights[child2Index];
+                    if (child1Weight == child2Weight)
+                    {
+                        ++countMatches;
+                    }
+                }
+                if (countMatches == 0)
+                {
+                    if (badChildIndex == int.MinValue)
+                    {
+                        badChildIndex = c1;
+                    }
+                    else
+                    {
+                        throw new InvalidProgramException($"Found multiple bad children existing {badChildIndex} new {c1}");
+                    }
+                }
             }
+
+            var badChildName = sChildren[brokenNode, badChildIndex];
+            var badChildNode = FindProgram(badChildName);
+            var goodExpectedChildWeight = int.MaxValue;
+
+            for (var c = 0; c < sChildrenCounts[brokenNode]; ++c)
+            {
+                var childName = sChildren[brokenNode, c];
+                var childIndex = FindProgram(childName);
+                Console.WriteLine($"Child[{c}] '{childName}' W:{sWeights[childIndex]} TW:{sTotalWeights[childIndex]}");
+                if (c != badChildIndex)
+                {
+                    if (goodExpectedChildWeight == int.MaxValue)
+                    {
+                        goodExpectedChildWeight = sTotalWeights[childIndex];
+                    }
+                    if (goodExpectedChildWeight != sTotalWeights[childIndex])
+                    {
+                        throw new InvalidProgramException($"Good Child nodes are unbalanced Expected:{goodExpectedChildWeight} Got:{sTotalWeights[childIndex]}");
+                    }
+                }
+            }
+
+            var newChildWeight = sWeights[badChildNode] + (goodExpectedChildWeight - sTotalWeights[badChildNode]);
+            BalanceTower = newChildWeight;
+            Console.WriteLine($"BAD Child[{badChildIndex}] '{badChildName}' NewWeight:{newChildWeight} W:{sWeights[badChildNode]} TW:{sTotalWeights[badChildNode]} Expected:{goodExpectedChildWeight}");
         }
 
         static int FindProgram(string name)
