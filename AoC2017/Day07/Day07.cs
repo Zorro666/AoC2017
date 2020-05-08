@@ -64,18 +64,27 @@ Your puzzle answer was bpvhwhh.
 
 --- Part Two ---
 
-The programs explain the situation: they can't get down. Rather, they could get down, if they weren't expending all of their energy trying to keep the tower balanced. Apparently, one program has the wrong weight, and until it's fixed, they're stuck here.
+The programs explain the situation: they can't get down. 
+Rather, they could get down, if they weren't expending all of their energy trying to keep the tower balanced. 
+Apparently, one program has the wrong weight, and until it's fixed, they're stuck here.
 
-For any program holding a disc, each program standing on that disc forms a sub-tower. Each of those sub-towers are supposed to be the same weight, or the disc itself isn't balanced. The weight of a tower is the sum of the weights of the programs in that tower.
+For any program holding a disc, each program standing on that disc forms a sub-tower. 
+Each of those sub-towers are supposed to be the same weight, or the disc itself isn't balanced. 
+The weight of a tower is the sum of the weights of the programs in that tower.
 
 In the example above, this means that for ugml's disc to be balanced, gyxo, ebii, and jptl must all have the same weight, and they do: 61.
 
-However, for tknk to be balanced, each of the programs standing on its disc and all programs above it must each match. This means that the following sums must all be the same:
+However, for tknk to be balanced, each of the programs standing on its disc and all programs above it must each match. 
+This means that the following sums must all be the same:
 
 ugml + (gyxo + ebii + jptl) = 68 + (61 + 61 + 61) = 251
 padx + (pbga + havc + qoyq) = 45 + (66 + 66 + 66) = 243
 fwft + (ktlj + cntj + xhth) = 72 + (57 + 57 + 57) = 243
-As you can see, tknk's disc is unbalanced: ugml's stack is heavier than the other two. Even though the nodes above ugml are balanced, ugml itself is too heavy: it needs to be 8 units lighter for its stack to weigh 243 and keep the towers balanced. If this change were made, its weight would be 60.
+
+As you can see, tknk's disc is unbalanced: ugml's stack is heavier than the other two. 
+Even though the nodes above ugml are balanced, ugml itself is too heavy: 
+it needs to be 8 units lighter for its stack to weigh 243 and keep the towers balanced. 
+If this change were made, its weight would be 60.
 
 Given that exactly one program is the wrong weight, what would its weight need to be to balance the entire tower?
 
@@ -89,15 +98,19 @@ namespace Day07
         readonly static int MAX_NUM_CHILDREN = 128;
         readonly static string[] sNames = new string[MAX_NUM_PROGRAMS];
         readonly static int[] sWeights = new int[MAX_NUM_PROGRAMS];
+        readonly static int[] sTotalWeights = new int[MAX_NUM_PROGRAMS];
         readonly static string[,] sChildren = new string[MAX_NUM_PROGRAMS, MAX_NUM_CHILDREN];
         readonly static int[] sChildrenCounts = new int[MAX_NUM_PROGRAMS];
         readonly static string[] sParents = new string[MAX_NUM_PROGRAMS];
+        readonly static int[] sDepths = new int[MAX_NUM_PROGRAMS];
         static int sProgramCount = 0;
+        static int sMaxDepth = 0;
 
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
             Parse(lines);
+            ComputeBalanceTower();
 
             if (part1)
             {
@@ -124,7 +137,9 @@ namespace Day07
         public static void Parse(string[] programs)
         {
             BottomProgram = null;
+            BalanceTower = 0;
             sProgramCount = 0;
+            sMaxDepth = int.MinValue;
             if (programs.Length > MAX_NUM_PROGRAMS)
             {
                 throw new InvalidProgramException($"Invalid input too many programs {programs.Length} MAX:{MAX_NUM_PROGRAMS}");
@@ -175,6 +190,7 @@ namespace Day07
 
                 sNames[sProgramCount] = name;
                 sWeights[sProgramCount] = weight;
+                sTotalWeights[sProgramCount] = 0;
                 ++sProgramCount;
             }
 
@@ -194,10 +210,18 @@ namespace Day07
                 }
             }
 
-            // Pass3 : set bottom program which is program with no parent
+            // Pass3 : compute depths
             for (var i = 0; i < sProgramCount; ++i)
             {
-                if (sParents[i] == null)
+                var depth = 0;
+                var node = i;
+                while (sParents[node] != null)
+                {
+                    ++depth;
+                    node = FindProgram(sParents[node]);
+                }
+                sDepths[i] = depth;
+                if (depth == 0)
                 {
                     if (BottomProgram != null)
                     {
@@ -205,6 +229,31 @@ namespace Day07
                     }
                     BottomProgram = sNames[i];
                 }
+                sMaxDepth = Math.Max(sMaxDepth, depth);
+            }
+        }
+
+        public static void ComputeBalanceTower()
+        {
+            for (var d = sMaxDepth; d >= 0; --d)
+            {
+                for (var i = 0; i < sProgramCount; ++i)
+                {
+                    if (sDepths[i] == d)
+                    {
+                        sTotalWeights[i] = sWeights[i];
+                        for (var c = 0; c < sChildrenCounts[i]; ++c)
+                        {
+                            var childName = sChildren[i, c];
+                            var childIndex = FindProgram(childName);
+                            sTotalWeights[i] += sTotalWeights[childIndex];
+                        }
+                    }
+                }
+            }
+            for (var i = 0; i < sProgramCount; ++i)
+            {
+                Console.WriteLine($"'{sNames[i]}' W:{sWeights[i]} TW:{sTotalWeights[i]}");
             }
         }
 
@@ -221,6 +270,7 @@ namespace Day07
         }
 
         public static string BottomProgram { get; private set; }
+        public static int BalanceTower { get; private set; }
 
         public static void Run()
         {
