@@ -6,10 +6,13 @@ namespace Day11
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day11(string directions, int expected)
+        [TestCase("ne,ne,ne", 3)]
+        [TestCase("ne,ne,sw,sw", 0)]
+        [TestCase("ne,ne,s,s", 2)]
+        [TestCase("se,sw,se,sw,sw", 3)]
+        public void HexSteps(string moves, int expected)
         {
-            Assert.Fail();
+            Assert.That(Program.HexSteps(moves), Is.EqualTo(expected));
         }
     }
 }
