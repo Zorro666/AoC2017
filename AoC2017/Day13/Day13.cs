@@ -178,28 +178,140 @@ In the example above, the trip severity is 0*3 + 6*4 = 24.
 
 Given the details of the firewall you've recorded, if you leave immediately, what is the severity of your whole trip?
 
+Your puzzle answer was 1528.
+
+--- Part Two ---
+
+Now, you need to pass through the firewall without being caught - easier said than done.
+
+You can't control the speed of the packet, but you can delay it any number of picoseconds.
+For each picosecond you delay the packet before beginning your trip, all security scanners move one step.
+You're not in the firewall during this time; you don't enter layer 0 until you stop delaying the packet.
+
+In the example above, if you delay 10 picoseconds (picoseconds 0 - 9), you won't get caught:
+
+State after delaying:
+ 0   1   2   3   4   5   6
+[ ] [S] ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+Picosecond 10:
+ 0   1   2   3   4   5   6
+( ) [S] ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+( ) [ ] ... ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Picosecond 11:
+ 0   1   2   3   4   5   6
+[ ] ( ) ... ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[S] (S) ... ... [S] ... [S]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Picosecond 12:
+ 0   1   2   3   4   5   6
+[S] [S] (.) ... [S] ... [S]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] (.) ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Picosecond 13:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... (.) [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [S] ... (.) [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+Picosecond 14:
+ 0   1   2   3   4   5   6
+[ ] [S] ... ... ( ) ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... ( ) ... [ ]
+[S] [S]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [S]     [S]
+
+Picosecond 15:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] (.) [ ]
+[S] [S]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [S]     [S]
+
+ 0   1   2   3   4   5   6
+[S] [S] ... ... [ ] (.) [ ]
+[ ] [ ]         [ ]     [ ]
+[ ]             [S]     [S]
+                [ ]     [ ]
+
+Picosecond 16:
+ 0   1   2   3   4   5   6
+[S] [S] ... ... [ ] ... ( )
+[ ] [ ]         [ ]     [ ]
+[ ]             [S]     [S]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] ... ( )
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Because all smaller delays would get you caught, the fewest number of picoseconds you would need to delay to get through safely is 10.
+
+What is the fewest number of picoseconds that you need to delay the packet to pass through the firewall without being caught?
+
 */
 
 namespace Day13
 {
     class Program
     {
-        readonly static int MAX_NUM_LAYERS = 1024;
+        readonly static int MAX_NUM_LAYERS = 128;
         readonly static int[] sLayerPositions = new int[MAX_NUM_LAYERS];
-        readonly static int[] sLayerIDs = new int[MAX_NUM_LAYERS];
         readonly static int[] sLayerDepths = new int[MAX_NUM_LAYERS];
         readonly static int[] sLayerDirections = new int[MAX_NUM_LAYERS];
-        static int sLayerCount;
+        static int sMaxLayer;
 
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
             Parse(lines);
-            Escape();
 
             if (part1)
             {
-                var result1 = Severity;
+                var result1 = Escape(0);
                 Console.WriteLine($"Day13 : Result1 {result1}");
                 var expected = 1528;
                 if (result1 != expected)
@@ -209,9 +321,9 @@ namespace Day13
             }
             else
             {
-                var result2 = -123;
+                var result2 = SmallestDelay();
                 Console.WriteLine($"Day13 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 3896406;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -221,7 +333,7 @@ namespace Day13
 
         public static void Parse(string[] layers)
         {
-            sLayerCount = 0;
+            sMaxLayer = int.MinValue;
             if (layers.Length > MAX_NUM_LAYERS)
             {
                 throw new InvalidProgramException($"Invalid input too many layers {layers.Length} MAX:{MAX_NUM_LAYERS}");
@@ -239,64 +351,49 @@ namespace Day13
                 var depthToken = tokens[1];
                 var depth = int.Parse(depthToken);
 
-                sLayerIDs[sLayerCount] = id;
-                sLayerDepths[sLayerCount] = depth;
-                ++sLayerCount;
+                sLayerDepths[id] = depth;
+                sMaxLayer = Math.Max(sMaxLayer, id);
             }
         }
 
-        static int FindLayerIndex(int id)
+        public static int Escape(int startingLayer)
         {
-            for (var i = 0; i < sLayerCount; ++i)
+            // Position of each column
+            // Period = (depth -1) * 2;
+            // (columnID + startingLayer % ((depth-1)*2)) % ((depth-1)*2)
+            var severity = -1;
+            for (var i = 0; i <= sMaxLayer; ++i)
             {
-                if (sLayerIDs[i] == id)
+                if (sLayerDepths[i] > 0)
+                {
+                    // layerPosition
+                    var layerPeriod = (sLayerDepths[i] - 1) * 2;
+                    var layerPostiion = (i - (startingLayer % layerPeriod)) % layerPeriod;
+                    if (layerPostiion == 0)
+                    {
+                        if (severity == -1)
+                        {
+                            severity = 0;
+                        }
+                        severity += i * sLayerDepths[i];
+                    }
+                }
+            }
+            return severity;
+        }
+
+        public static int SmallestDelay()
+        {
+            const int MAX_DELAY = 1024 * 1024 * 1024;
+            for (var i = 0; i < MAX_DELAY; ++i)
+            {
+                if (Escape(-i) == -1)
                 {
                     return i;
                 }
             }
-            return -1;
+            throw new InvalidProgramException($"Failed to find a clean exit MAX:{MAX_DELAY}");
         }
-
-        public static void Escape()
-        {
-            var exitLayer = int.MinValue;
-            for (var i = 0; i < sLayerCount; ++i)
-            {
-                sLayerPositions[i] = 0;
-                sLayerDirections[i] = +1;
-                exitLayer = Math.Max(sLayerIDs[i], exitLayer);
-            }
-
-            var severity = 0;
-            var myLayerID = 0;
-            while (myLayerID <= exitLayer)
-            {
-                var myIndex = FindLayerIndex(myLayerID);
-                if (myIndex >= 0)
-                {
-                    if (sLayerPositions[myIndex] == 0)
-                    {
-                        severity += myLayerID * sLayerDepths[myIndex];
-                    }
-                }
-                for (var i = 0; i < sLayerCount; ++i)
-                {
-                    sLayerPositions[i] = sLayerPositions[i] + sLayerDirections[i];
-                    if (sLayerPositions[i] == 0)
-                    {
-                        sLayerDirections[i] = +1;
-                    }
-                    else if (sLayerPositions[i] == sLayerDepths[i] - 1)
-                    {
-                        sLayerDirections[i] = -1;
-                    }
-                }
-                ++myLayerID;
-            }
-            Severity = severity;
-        }
-
-        public static int Severity { get; private set; }
 
         public static void Run()
         {
@@ -307,3 +404,37 @@ namespace Day13
         }
     }
 }
+
+// 2 4 6 8 10
+// 2 3 4 5 6 7 8 9
+// 0 0 0 0 0 0 0 0 = START
+// 1 1 1 1 1 1 1 1 = 1
+// 0 2 2 2 2 2 2 2 = 2
+// 1 1 3 3 3 3 3 3 = 3
+// 0 0 2 4 4 4 4 4 = 4
+// 1 1 1 3 5 5 5 5 = 5
+// 0 2 0 2 4 6 6 6 = 6
+// 1 1 1 1 3 5 7 7 = 7
+// 0 0 2 0 2 4 6 8 = 8
+// 1 1 3 1 1 3 5 7 = 9
+// 0 2 2 2 0 2 4 6 = 10
+
+// Period = (depth -1) * 2;
+
+//0: 3 : 0 + n mod 4
+//1: 2 : 1 + n mod 2 
+//4: 4 : 4 + n mod 6
+//6: 4 : 0 + n mod 6
+
+// n  0  1  4  6
+// 0  0  1  4  0
+// 1  1  0  5  1
+// 2  2  1  0  2
+// 3  3  0  1  3
+// 4  0  1  2  4
+// 5  1  0  3  5
+// 6  2  1  4  0
+// 7  3  0  5  1
+// 8  0  1  0  2
+// 9  1  0  1  3
+//10  2  1  2  4
