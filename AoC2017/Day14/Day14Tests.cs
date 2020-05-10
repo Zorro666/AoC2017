@@ -6,10 +6,10 @@ namespace Day14
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day14(string directions, int expected)
+        [TestCase("flqrgnkx", 8108)]
+        public void UsedSquares(string hash, int expected)
         {
-            Assert.Fail();
+            Assert.That(Program.UsedSquares(hash), Is.EqualTo(expected));
         }
     }
 }
