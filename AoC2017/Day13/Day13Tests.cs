@@ -6,10 +6,16 @@ namespace Day13
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day13(string directions, int expected)
+        [TestCase(new string[] {
+"0: 3",
+"1: 2",
+"4: 4",
+"6: 4"
+        }, 24)]
+        public void Severity(string[] depths, int expected)
         {
-            Assert.Fail();
+            Program.Parse(depths);
+            Assert.That(Program.Severity, Is.EqualTo(expected));
         }
     }
 }
