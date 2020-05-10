@@ -39,12 +39,32 @@ Therefore, a total of 6 programs are in this group; all but program 1, which has
 
 How many programs are in the group that contains program ID 0?
 
+Your puzzle answer was 169.
+
+--- Part Two ---
+
+There are more programs than just the ones in the group containing program ID 0. 
+The rest of them have no way of reaching that group, and still might have no way of reaching each other.
+
+A group is a collection of programs that can all communicate via pipes either directly or indirectly. 
+The programs you identified just a moment ago are all part of the same group. 
+Now, they would like you to determine the total number of groups.
+
+In the example above, there were 2 groups: one consisting of programs 0,2,3,4,5,6, and the other consisting solely of program 1.
+
+How many groups are there in total?
+
 */
 
 namespace Day12
 {
     class Program
     {
+        readonly static int MAX_NUM_PROGRAMS = 2048;
+        readonly static int MAX_NUM_CONNECTIONS = 128;
+        readonly static int[,] sConnections = new int[MAX_NUM_PROGRAMS, MAX_NUM_CONNECTIONS];
+        readonly static int[] sConnectionCount = new int[MAX_NUM_PROGRAMS];
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
@@ -54,7 +74,7 @@ namespace Day12
             {
                 long result1 = ProgramCount(0);
                 Console.WriteLine($"Day12 : Result1 {result1}");
-                long expected = 280;
+                long expected = 169;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -74,11 +94,79 @@ namespace Day12
 
         public static void Parse(string[] connections)
         {
+            if (connections.Length > MAX_NUM_PROGRAMS)
+            {
+                throw new InvalidProgramException($"Invalid input too many programs {connections.Length} MAX:{MAX_NUM_PROGRAMS}");
+            }
+
+            for (var c = 0; c < MAX_NUM_PROGRAMS; ++c)
+            {
+                sConnectionCount[c] = 0;
+            }
+
+            foreach (var line in connections)
+            {
+                var tokens = line.Trim().Split();
+                if (tokens.Length < 3)
+                {
+                    throw new InvalidProgramException($"Invalid line '{line}' expected at least 3 tokens got {tokens.Length}");
+                }
+
+                var id = int.Parse(tokens[0].Trim());
+                if (id >= MAX_NUM_PROGRAMS)
+                {
+                    throw new InvalidProgramException($"Invalid line '{line}' invalid ID {id} bigger than MAX {MAX_NUM_PROGRAMS - 1}");
+                }
+
+                if (tokens[1].Trim() != "<->")
+                {
+                    throw new InvalidProgramException($"Invalid line '{line}' invalid token {tokens[1]} expected '<->'");
+                }
+
+                if (sConnectionCount[id] != 0)
+                {
+                    throw new InvalidProgramException($"Invalid line '{line}' ID:{id} already has non-zero connections {sConnectionCount[id]}");
+                }
+                var connectionCount = tokens.Length - 2;
+                if (connectionCount > MAX_NUM_CONNECTIONS)
+                {
+                    throw new InvalidProgramException($"Invalid line '{line}' ID:{id} too many connections {connectionCount} MAX:{MAX_NUM_CONNECTIONS}");
+                }
+                for (var i = 0; i < connectionCount; ++i)
+                {
+                    var otherEndToken = tokens[i + 2].Trim().Trim(',');
+                    var otherEndID = int.Parse(otherEndToken);
+                    if ((otherEndID < 0) || (otherEndID >= MAX_NUM_PROGRAMS))
+                    {
+                        throw new InvalidProgramException($"Invalid line '{line}' ID:{id} out of range connection {otherEndID}");
+                    }
+                    sConnections[id, i] = otherEndID;
+                }
+                sConnectionCount[id] = connectionCount;
+            }
         }
 
         public static int ProgramCount(int programID)
         {
-            return int.MinValue;
+            bool[] visited = new bool[MAX_NUM_PROGRAMS];
+            var count = 1 + VisitChildren(programID, ref visited);
+            return count;
+        }
+
+        static int VisitChildren(int id, ref bool[] visited)
+        {
+            visited[id] = true;
+            var count = 0;
+            for (var c = 0; c < sConnectionCount[id]; ++c)
+            {
+                var child = sConnections[id, c];
+                if (visited[child] == false)
+                {
+                    ++count;
+                    count += VisitChildren(child, ref visited);
+                }
+            }
+            return count;
         }
 
         public static void Run()
