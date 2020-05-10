@@ -20,5 +20,20 @@ namespace Day12
             Program.Parse(connections);
             Assert.That(Program.ProgramCount(programID), Is.EqualTo(expected));
         }
+
+        [TestCase(new string[] {
+"0 <-> 2",
+"1 <-> 1",
+"2 <-> 0, 3, 4",
+"3 <-> 2, 4",
+"4 <-> 2, 3, 6",
+"5 <-> 6",
+"6 <-> 4, 5"
+        }, 2, TestName = "GroupCount = 2")]
+        public void GroupCount(string[] connections, int expected)
+        {
+            Program.Parse(connections);
+            Assert.That(Program.GroupCount(), Is.EqualTo(expected));
+        }
     }
 }

@@ -72,9 +72,9 @@ namespace Day12
 
             if (part1)
             {
-                long result1 = ProgramCount(0);
+                var result1 = ProgramCount(0);
                 Console.WriteLine($"Day12 : Result1 {result1}");
-                long expected = 169;
+                var expected = 169;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -82,9 +82,9 @@ namespace Day12
             }
             else
             {
-                long result2 = -123;
+                var result2 = GroupCount();
                 Console.WriteLine($"Day12 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 179;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -144,6 +144,24 @@ namespace Day12
                 }
                 sConnectionCount[id] = connectionCount;
             }
+        }
+
+        public static int GroupCount()
+        {
+            bool[] visited = new bool[MAX_NUM_PROGRAMS];
+            var count = 0;
+            for (var p = 0; p < MAX_NUM_PROGRAMS; ++p)
+            {
+                if (sConnectionCount[p] > 0)
+                {
+                    if (visited[p] == false)
+                    {
+                        ++count;
+                        VisitChildren(p, ref visited);
+                    }
+                }
+            }
+            return count;
         }
 
         public static int ProgramCount(int programID)
