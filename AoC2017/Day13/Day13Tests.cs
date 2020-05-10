@@ -12,9 +12,10 @@ namespace Day13
 "4: 4",
 "6: 4"
         }, 24)]
-        public void Severity(string[] depths, int expected)
+        public void Severity(string[] layers, int expected)
         {
-            Program.Parse(depths);
+            Program.Parse(layers);
+            Program.Escape();
             Assert.That(Program.Severity, Is.EqualTo(expected));
         }
     }

@@ -184,16 +184,24 @@ namespace Day13
 {
     class Program
     {
+        readonly static int MAX_NUM_LAYERS = 1024;
+        readonly static int[] sLayerPositions = new int[MAX_NUM_LAYERS];
+        readonly static int[] sLayerIDs = new int[MAX_NUM_LAYERS];
+        readonly static int[] sLayerDepths = new int[MAX_NUM_LAYERS];
+        readonly static int[] sLayerDirections = new int[MAX_NUM_LAYERS];
+        static int sLayerCount;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
             Parse(lines);
+            Escape();
 
             if (part1)
             {
-                long result1 = Severity;
+                var result1 = Severity;
                 Console.WriteLine($"Day13 : Result1 {result1}");
-                long expected = 280;
+                var expected = 1528;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -201,9 +209,9 @@ namespace Day13
             }
             else
             {
-                long result2 = -123;
+                var result2 = -123;
                 Console.WriteLine($"Day13 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -211,8 +219,81 @@ namespace Day13
             }
         }
 
-        public static void Parse(string[] depths)
+        public static void Parse(string[] layers)
         {
+            sLayerCount = 0;
+            if (layers.Length > MAX_NUM_LAYERS)
+            {
+                throw new InvalidProgramException($"Invalid input too many layers {layers.Length} MAX:{MAX_NUM_LAYERS}");
+            }
+            foreach (var layer in layers)
+            {
+                var tokens = layer.Trim().Split();
+                if (tokens.Length != 2)
+                {
+                    throw new InvalidProgramException($"Invalid layer '{layer}' must have 2 tokens {tokens.Length}");
+                }
+                var idToken = tokens[0].Trim().Trim(':');
+                var id = int.Parse(idToken);
+
+                var depthToken = tokens[1];
+                var depth = int.Parse(depthToken);
+
+                sLayerIDs[sLayerCount] = id;
+                sLayerDepths[sLayerCount] = depth;
+                ++sLayerCount;
+            }
+        }
+
+        static int FindLayerIndex(int id)
+        {
+            for (var i = 0; i < sLayerCount; ++i)
+            {
+                if (sLayerIDs[i] == id)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public static void Escape()
+        {
+            var exitLayer = int.MinValue;
+            for (var i = 0; i < sLayerCount; ++i)
+            {
+                sLayerPositions[i] = 0;
+                sLayerDirections[i] = +1;
+                exitLayer = Math.Max(sLayerIDs[i], exitLayer);
+            }
+
+            var severity = 0;
+            var myLayerID = 0;
+            while (myLayerID <= exitLayer)
+            {
+                var myIndex = FindLayerIndex(myLayerID);
+                if (myIndex >= 0)
+                {
+                    if (sLayerPositions[myIndex] == 0)
+                    {
+                        severity += myLayerID * sLayerDepths[myIndex];
+                    }
+                }
+                for (var i = 0; i < sLayerCount; ++i)
+                {
+                    sLayerPositions[i] = sLayerPositions[i] + sLayerDirections[i];
+                    if (sLayerPositions[i] == 0)
+                    {
+                        sLayerDirections[i] = +1;
+                    }
+                    else if (sLayerPositions[i] == sLayerDepths[i] - 1)
+                    {
+                        sLayerDirections[i] = -1;
+                    }
+                }
+                ++myLayerID;
+            }
+            Severity = severity;
         }
 
         public static int Severity { get; private set; }
