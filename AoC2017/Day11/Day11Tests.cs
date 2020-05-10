@@ -12,7 +12,7 @@ namespace Day11
         [TestCase("se,sw,se,sw,sw", 3)]
         public void HexSteps(string moves, int expected)
         {
-            Assert.That(Program.HexSteps(moves), Is.EqualTo(expected));
+            Assert.That(Program.HexSteps(moves).end, Is.EqualTo(expected));
         }
     }
 }

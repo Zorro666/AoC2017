@@ -69,6 +69,7 @@ namespace Day11
 {
     class Program
     {
+        readonly static int[] sCounts = new int[6];
         public enum Direction { N = 0, S = 1, NW = 2, NE = 3, SW = 4, SE = 5 };
 
         private Program(string inputFile, bool part1)
@@ -82,7 +83,7 @@ namespace Day11
 
             if (part1)
             {
-                var result1 = HexSteps(moves);
+                var result1 = HexSteps(moves).end;
                 Console.WriteLine($"Day11 : Result1 {result1}");
                 var expected = 696;
                 if (result1 != expected)
@@ -92,9 +93,9 @@ namespace Day11
             }
             else
             {
-                var result2 = -123;
+                var result2 = HexSteps(moves).max;
                 Console.WriteLine($"Day11 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 1461;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -102,10 +103,16 @@ namespace Day11
             }
         }
 
-        public static int HexSteps(string moves)
+        public static (int max, int end) HexSteps(string moves)
         {
-            var counts = new int[6];
+            for (var i = 0; i < sCounts.Length; ++i)
+            {
+                sCounts[i] = 0;
+            }
+
             var tokens = moves.Trim().Split(',');
+            var steps = 0;
+            var maxSteps = 0;
             foreach (var token in tokens)
             {
                 var move = token switch
@@ -118,151 +125,143 @@ namespace Day11
                     "se" => Direction.SE,
                     _ => throw new InvalidProgramException($"Unknown token {token}")
                 };
-                ++counts[(int)move];
+                ++sCounts[(int)move];
+                steps = TakeStep();
+                maxSteps = Math.Max(steps, maxSteps);
             }
+            return (maxSteps, steps);
+        }
 
-            int minSteps;
+        static int TakeStep()
+        {
+            int lastSteps;
             int steps = int.MaxValue;
             do
             {
-                minSteps = steps;
+                lastSteps = steps;
                 int delta;
-                // n + s : 0
-                if (counts[(int)Direction.N] > counts[(int)Direction.S])
+                // n + s = 0
+                if (sCounts[(int)Direction.N] > sCounts[(int)Direction.S])
                 {
-                    delta = counts[(int)Direction.S];
+                    delta = sCounts[(int)Direction.S];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.N];
+                    delta = sCounts[(int)Direction.N];
                 }
-                counts[(int)Direction.N] -= delta;
-                counts[(int)Direction.S] -= delta;
+                sCounts[(int)Direction.N] -= delta;
+                sCounts[(int)Direction.S] -= delta;
 
-                // ne + sw : 0
-                if (counts[(int)Direction.NE] > counts[(int)Direction.SW])
+                // ne + sw = 0
+                if (sCounts[(int)Direction.NE] > sCounts[(int)Direction.SW])
                 {
-                    delta = counts[(int)Direction.SW];
+                    delta = sCounts[(int)Direction.SW];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.NE];
+                    delta = sCounts[(int)Direction.NE];
                 }
-                counts[(int)Direction.NE] -= delta;
-                counts[(int)Direction.SW] -= delta;
+                sCounts[(int)Direction.NE] -= delta;
+                sCounts[(int)Direction.SW] -= delta;
 
-                // nw + se : 0
-                if (counts[(int)Direction.NW] > counts[(int)Direction.SE])
+                // nw + se = 0
+                if (sCounts[(int)Direction.NW] > sCounts[(int)Direction.SE])
                 {
-                    delta = counts[(int)Direction.SE];
+                    delta = sCounts[(int)Direction.SE];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.NW];
+                    delta = sCounts[(int)Direction.NW];
                 }
-                counts[(int)Direction.NW] -= delta;
-                counts[(int)Direction.SE] -= delta;
+                sCounts[(int)Direction.NW] -= delta;
+                sCounts[(int)Direction.SE] -= delta;
 
-                // se + sw : s
-                if (counts[(int)Direction.SE] > counts[(int)Direction.SW])
+                // se + sw = s
+                if (sCounts[(int)Direction.SE] > sCounts[(int)Direction.SW])
                 {
-                    delta = counts[(int)Direction.SW];
+                    delta = sCounts[(int)Direction.SW];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.SE];
+                    delta = sCounts[(int)Direction.SE];
                 }
-                counts[(int)Direction.SE] -= delta;
-                counts[(int)Direction.SW] -= delta;
-                counts[(int)Direction.S] += delta;
+                sCounts[(int)Direction.SE] -= delta;
+                sCounts[(int)Direction.SW] -= delta;
+                sCounts[(int)Direction.S] += delta;
 
-                // ne + nw : n
-                if (counts[(int)Direction.NE] > counts[(int)Direction.NW])
+                // ne + nw = n
+                if (sCounts[(int)Direction.NE] > sCounts[(int)Direction.NW])
                 {
-                    delta = counts[(int)Direction.NW];
+                    delta = sCounts[(int)Direction.NW];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.NE];
+                    delta = sCounts[(int)Direction.NE];
                 }
-                counts[(int)Direction.NE] -= delta;
-                counts[(int)Direction.NW] -= delta;
-                counts[(int)Direction.N] += delta;
+                sCounts[(int)Direction.NE] -= delta;
+                sCounts[(int)Direction.NW] -= delta;
+                sCounts[(int)Direction.N] += delta;
 
-                // ne + s : se
-                if (counts[(int)Direction.NE] > counts[(int)Direction.S])
+                // ne + s = se
+                if (sCounts[(int)Direction.NE] > sCounts[(int)Direction.S])
                 {
-                    delta = counts[(int)Direction.S];
+                    delta = sCounts[(int)Direction.S];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.NE];
+                    delta = sCounts[(int)Direction.NE];
                 }
-                counts[(int)Direction.NE] -= delta;
-                counts[(int)Direction.S] -= delta;
-                counts[(int)Direction.SE] += delta;
+                sCounts[(int)Direction.NE] -= delta;
+                sCounts[(int)Direction.S] -= delta;
+                sCounts[(int)Direction.SE] += delta;
 
-                // nw + s : sw
-                if (counts[(int)Direction.NW] > counts[(int)Direction.S])
+                // nw + s = sw
+                if (sCounts[(int)Direction.NW] > sCounts[(int)Direction.S])
                 {
-                    delta = counts[(int)Direction.S];
+                    delta = sCounts[(int)Direction.S];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.NW];
+                    delta = sCounts[(int)Direction.NW];
                 }
-                counts[(int)Direction.NW] -= delta;
-                counts[(int)Direction.S] -= delta;
-                counts[(int)Direction.SW] += delta;
+                sCounts[(int)Direction.NW] -= delta;
+                sCounts[(int)Direction.S] -= delta;
+                sCounts[(int)Direction.SW] += delta;
 
-                // se + n : ne
-                if (counts[(int)Direction.SE] > counts[(int)Direction.N])
+                // se + n = ne
+                if (sCounts[(int)Direction.SE] > sCounts[(int)Direction.N])
                 {
-                    delta = counts[(int)Direction.N];
+                    delta = sCounts[(int)Direction.N];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.SE];
+                    delta = sCounts[(int)Direction.SE];
                 }
-                counts[(int)Direction.SE] -= delta;
-                counts[(int)Direction.N] -= delta;
-                counts[(int)Direction.NE] += delta;
+                sCounts[(int)Direction.SE] -= delta;
+                sCounts[(int)Direction.N] -= delta;
+                sCounts[(int)Direction.NE] += delta;
 
-                // sw + n : nw
-                if (counts[(int)Direction.SW] > counts[(int)Direction.N])
+                // sw + n = nw
+                if (sCounts[(int)Direction.SW] > sCounts[(int)Direction.N])
                 {
-                    delta = counts[(int)Direction.N];
+                    delta = sCounts[(int)Direction.N];
                 }
                 else
                 {
-                    delta = counts[(int)Direction.SW];
+                    delta = sCounts[(int)Direction.SW];
                 }
-                counts[(int)Direction.SW] -= delta;
-                counts[(int)Direction.N] -= delta;
-                counts[(int)Direction.NW] += delta;
-
-                // n + s : 0
-                if (counts[(int)Direction.N] > counts[(int)Direction.S])
-                {
-                    delta = counts[(int)Direction.S];
-                }
-                else
-                {
-                    delta = counts[(int)Direction.N];
-                }
-                counts[(int)Direction.N] -= delta;
-                counts[(int)Direction.S] -= delta;
+                sCounts[(int)Direction.SW] -= delta;
+                sCounts[(int)Direction.N] -= delta;
+                sCounts[(int)Direction.NW] += delta;
 
                 steps = 0;
-                steps += counts[0];
-                steps += counts[1];
-                steps += counts[2];
-                steps += counts[3];
-                steps += counts[4];
-                steps += counts[5];
-            } while (steps < minSteps);
+                for (var i = 0; i < sCounts.Length; ++i)
+                {
+                    steps += sCounts[i];
+                }
+            } while (steps != lastSteps);
 
-            return minSteps;
+            return steps;
         }
 
         public static void Run()
