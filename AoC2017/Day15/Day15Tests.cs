@@ -6,10 +6,10 @@ namespace Day15
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day15(string directions, int expected)
+        [TestCase(65, 8921, 588)]
+        public void CountMatches(int aStart, int bStart, int expected)
         {
-            Assert.Fail();
+            Assert.That(Program.CountMatches(aStart, bStart), Is.EqualTo(expected));
         }
     }
 }

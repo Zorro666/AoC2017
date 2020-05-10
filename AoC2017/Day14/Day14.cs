@@ -91,7 +91,7 @@ namespace Day14
             {
                 var result2 = CountRegions(hash);
                 Console.WriteLine($"Day14 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 1086;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
