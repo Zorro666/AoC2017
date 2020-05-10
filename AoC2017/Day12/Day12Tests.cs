@@ -6,10 +6,19 @@ namespace Day12
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day12(string directions, int expected)
+        [TestCase(new string[] {
+"0 <-> 2",
+"1 <-> 1",
+"2 <-> 0, 3, 4",
+"3 <-> 2, 4",
+"4 <-> 2, 3, 6",
+"5 <-> 6",
+"6 <-> 4, 5"
+        }, 0, 6, TestName = "ProgramCount(0) = 6")]
+        public void ProgramCount(string[] connections, int programID, int expected)
         {
-            Assert.Fail();
+            Program.Parse(connections);
+            Assert.That(Program.ProgramCount(programID), Is.EqualTo(expected));
         }
     }
 }
