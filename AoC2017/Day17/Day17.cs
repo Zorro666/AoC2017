@@ -44,6 +44,20 @@ What is the value after 2017 in your completed circular buffer?
 
 Your puzzle input is 370.
 
+Your puzzle answer was 1244.
+
+--- Part Two ---
+
+The spinlock does not short-circuit. Instead, it gets more angry. At least, you assume that's what happened; it's spinning significantly faster than it was a moment ago.
+
+You have good news and bad news.
+
+The good news is that you have improved calculations for how to stop the spinlock. They indicate that you actually need to identify the value after 0 in the current state of the circular buffer.
+
+The bad news is that while you were determining this, the spinlock has just finished inserting its fifty millionth value (50000000).
+
+What is the value after 0 the moment 50000000 is inserted?
+
 */
 
 namespace Day17
@@ -63,7 +77,7 @@ namespace Day17
             {
                 var result1 = SpinLock(stepsPerInsert, 2018);
                 Console.WriteLine($"Day17 : Result1 {result1}");
-                var expected = 280;
+                var expected = 1244;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -83,7 +97,24 @@ namespace Day17
 
         public static int SpinLock(int stepsPerInsert, int insertCount)
         {
-            return -1;
+            var bufferSize = 0;
+            var values = new int[insertCount];
+            var insertAt = 0;
+            values[insertAt] = 0;
+            ++bufferSize;
+            for (var i = 1; i < insertCount; ++i)
+            {
+                insertAt += stepsPerInsert;
+                insertAt %= bufferSize;
+                ++insertAt;
+                for (var j = bufferSize; j > insertAt; --j)
+                {
+                    values[j] = values[j - 1];
+                }
+                values[insertAt] = i;
+                ++bufferSize;
+            }
+            return values[insertAt + 1];
         }
 
         public static void Run()
