@@ -6,10 +6,10 @@ namespace Day17
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day17(string directions, int expected)
+        [TestCase(3, 2018, 638)]
+        public void SpinLock(int stepsPerInsert, int insertCount, int expected)
         {
-            Assert.Fail();
+            Assert.That(Program.SpinLock(stepsPerInsert, insertCount), Is.EqualTo(expected));
         }
     }
 }
