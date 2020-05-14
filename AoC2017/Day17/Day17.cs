@@ -85,9 +85,9 @@ namespace Day17
             }
             else
             {
-                var result2 = -123;
+                var result2 = SpinLock2(stepsPerInsert, 50 * 1000 * 1000);
                 Console.WriteLine($"Day17 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 11162912;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -115,6 +115,26 @@ namespace Day17
                 ++bufferSize;
             }
             return values[insertAt + 1];
+        }
+
+        public static int SpinLock2(int stepsPerInsert, int insertCount)
+        {
+            var bufferSize = 0;
+            var insertAt = 0;
+            ++bufferSize;
+            var valueNextToZero = -1;
+            for (var i = 1; i < insertCount + 1; ++i)
+            {
+                insertAt += stepsPerInsert;
+                insertAt %= bufferSize;
+                if (insertAt == 0)
+                {
+                    valueNextToZero = i;
+                }
+                ++insertAt;
+                ++bufferSize;
+            }
+            return valueNextToZero;
         }
 
         public static void Run()
