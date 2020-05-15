@@ -59,7 +59,7 @@ namespace Day18
         public enum Operation { ILLEGAL = 0, SND, SET, ADD, MUL, MOD, RCV, JGZ };
 
         readonly static int MAX_NUM_INSTRUCTIONS = 1024;
-        readonly static int MAX_NUM_REGISTERS = 26;
+        readonly static int MAX_NUM_REGISTERS = 256;
 
         readonly static Operation[] sOperations = new Operation[MAX_NUM_INSTRUCTIONS];
         readonly static int[] sDestinationRegisters = new int[MAX_NUM_INSTRUCTIONS];
@@ -130,26 +130,26 @@ namespace Day18
                     throw new InvalidProgramException($"Invalid line '{line}' destination register must be a-z '{destRegToken}'");
                 }
 
-                var destinationRegister = destRegToken[0] - 'a';
+                var destinationRegister = destRegToken[0];
                 if ((op == Operation.SET) || (op == Operation.ADD) || (op == Operation.MUL) || (op == Operation.MOD) || (op == Operation.JGZ))
                 {
                     sDestinationRegisters[sInstructionCount] = destinationRegister;
 
                     var srcValueToken = tokens[2].Trim();
-                    var srcValueRegister = 'V';
+                    int srcValueRegister = 'V';
                     if (srcValueToken.Length == 1)
                     {
                         if ((srcValueToken[0] >= 'a') && (srcValueToken[0] <= 'z'))
                         {
                             sSourceValues[sInstructionCount] = int.MinValue;
-                            sSourceRegisters[sInstructionCount] = srcValueToken[0] - 'a';
+                            srcValueRegister = srcValueToken[0];
                         }
                     }
                     if (srcValueRegister == 'V')
                     {
                         sSourceValues[sInstructionCount] = int.Parse(srcValueToken);
-                        sSourceRegisters[sInstructionCount] = 'V';
                     }
+                    sSourceRegisters[sInstructionCount] = srcValueRegister;
                 }
                 else if (op == Operation.SND)
                 {
@@ -180,7 +180,7 @@ namespace Day18
                 {
                     return sRegisterValues[RCV_REGISTER];
                 }
-                if (pc > sInstructionCount)
+                if (pc >= sInstructionCount)
                 {
                     throw new IndexOutOfRangeException($"Illegal pc {pc} range 0-{sInstructionCount - 1}");
                 }
@@ -204,7 +204,7 @@ namespace Day18
                 sourceValue = sRegisterValues[sourceRegister];
             }
             var destinationRegister = sDestinationRegisters[pc];
-            var destinationRegisterValue = sDestinationRegisters[pc];
+            var destinationRegisterValue = sRegisterValues[destinationRegister];
             var resultValue = sOperations[pc] switch
             {
                 Operation.SND => sourceValue,
@@ -224,12 +224,12 @@ namespace Day18
             {
                 if (resultValue != 0)
                 {
-                    sDestinationRegisters[RCV_REGISTER] = resultValue;
+                    sRegisterValues[RCV_REGISTER] = sourceValue;
                 }
             }
             else
             {
-                sDestinationRegisters[destinationRegister] = resultValue;
+                sRegisterValues[destinationRegister] = resultValue;
             }
             return pc + 1;
         }
