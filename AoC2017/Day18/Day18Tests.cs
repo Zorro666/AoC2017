@@ -6,10 +6,22 @@ namespace Day18
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day18(string directions, int expected)
+        [TestCase(new string[] {
+"set a 1",
+"add a 2",
+"mul a a",
+"mod a 5",
+"snd a",
+"set a 0",
+"rcv a",
+"jgz a -1",
+"set a 1",
+"jgz a -2"
+        }, 4, TestName = "FindValidRcvFrequency 4")]
+        public void FirstValidRcvFrequency(string[] program, int expected)
         {
-            Assert.Fail();
+            Program.Parse(program);
+            Assert.That(Program.FirstValidRcvFrequency(), Is.EqualTo(expected));
         }
     }
 }
