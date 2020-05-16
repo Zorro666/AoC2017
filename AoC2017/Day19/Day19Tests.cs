@@ -6,10 +6,33 @@ namespace Day19
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day19(string directions, int expected)
+        [TestCase(new string[] {
+"     |          ",
+"     |  +--+    ",
+"     A  |  C    ",
+" F---|----E|--+ ",
+"     |  |  |  D ",
+"     +B-+  +--+ "
+        }, "ABCDEF", TestName = "FindRoute (ABCDEF)")]
+        public void FindRoute(string[] map, string expected)
         {
-            Assert.Fail();
+            Program.Parse(map);
+            Assert.That(Program.FindRoute(), Is.EqualTo(expected));
+        }
+
+        [Test]
+        [TestCase(new string[] {
+"     |          ",
+"     |  +--+    ",
+"     A  |  C    ",
+" F---|----E|--+ ",
+"     |  |  |  D ",
+"     +B-+  +--+ "
+        }, 38, TestName = "RouteLength 38")]
+        public void RouteLength(string[] map, long expected)
+        {
+            Program.Parse(map);
+            Assert.That(Program.RouteLength(), Is.EqualTo(expected));
         }
     }
 }
