@@ -21,7 +21,7 @@ namespace Day18
         public void FirstValidRcvFrequency(string[] program, int expected)
         {
             Program.Parse(program);
-            Assert.That(Program.FirstValidRcvFrequency(), Is.EqualTo(expected));
+            Assert.That(Program.FirstValidRcvFrequency(8), Is.EqualTo(expected));
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace Day18
         public void FindDeadlock(string[] program, int expected)
         {
             Program.Parse(program);
-            Assert.That(Program.FindDeadlock(), Is.EqualTo(expected));
+            Assert.That(Program.FindDeadlock(8), Is.EqualTo(expected));
         }
     }
 }

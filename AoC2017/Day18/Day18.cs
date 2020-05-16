@@ -103,6 +103,7 @@ namespace Day18
         readonly static int MAX_NUM_INSTRUCTIONS = 1024;
         readonly static int MAX_NUM_REGISTERS = 256;
         readonly static int MAX_NUM_PROGRAMS = 2;
+        readonly static int MAX_NUM_INPUTS = 1024;
 
         public struct Prog
         {
@@ -113,8 +114,12 @@ namespace Day18
             public int[] SourceRegisters;
             public long[] SourceValues;
 
-            public long[] RegisterValues;
+            public long[] Inputs;
             public int InstructionCount;
+
+            public long[] RegisterValues;
+            public long InputsCount;
+
             public int Id;
             public long Pc;
 
@@ -129,13 +134,17 @@ namespace Day18
 
                 RegisterValues = new long[MAX_NUM_REGISTERS];
                 InstructionCount = 0;
+
+                Inputs = new long[MAX_NUM_INPUTS];
+                InputsCount = 0;
                 Id = inId;
                 Pc = 0;
+
                 Parse(lines);
                 RegisterValues['p'] = Id;
             }
 
-            public bool ExecuteInstruction()
+            public Operation ExecuteInstruction(bool sendReceiveMode)
             {
                 //snd X plays a sound with a frequency equal to the value of X.
                 //set X Y sets register X to the value of Y.
@@ -144,7 +153,7 @@ namespace Day18
                 //mod X Y sets register X to the remainder of dividing the value contained in register X by the value of Y (that is, it sets X to the result of X modulo Y).
                 //rcv X recovers the frequency of the last sound played, but only when the value of X is not zero.(If it is zero, the command does nothing.)
                 //jgz X Y jumps with an offset of the value of Y, but only if the value of X is greater than zero.(An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
-                var executedRcv = false;
+                var operation = Operations[Pc];
                 var sourceValue = SourceValues[Pc];
                 var sourceRegister = SourceRegisters[Pc];
                 if (sourceRegister != 'V')
@@ -157,7 +166,7 @@ namespace Day18
                 {
                     destinationValue = RegisterValues[destinationRegister];
                 }
-                var resultValue = Operations[Pc] switch
+                var resultValue = operation switch
                 {
                     Operation.SND => sourceValue,
                     Operation.SET => sourceValue,
@@ -168,25 +177,65 @@ namespace Day18
                     Operation.JGZ => (destinationValue > 0) ? sourceValue : 1,
                     _ => throw new InvalidProgramException($"Invalid opcode code")
                 };
-                if (Operations[Pc] == Operation.JGZ)
+                if (operation == Operation.JGZ)
                 {
                     Pc += resultValue;
-                    return false;
+                    return operation;
                 }
-                else if (Operations[Pc] == Operation.RCV)
+                else if (operation == Operation.RCV)
                 {
-                    if (resultValue != 0)
+                    if (sendReceiveMode)
                     {
-                        RegisterValues[RCV_REGISTER] = sourceValue;
+                        if (InputsCount > 0)
+                        {
+                            RegisterValues[destinationRegister] = Inputs[0];
+                            for (var i = 1; i < InputsCount; ++i)
+                            {
+                                Inputs[i - 1] = Inputs[i];
+                            }
+                            --InputsCount;
+                        }
+                        else
+                        {
+                            // Do not move the program counter : waiting for input
+                            return operation;
+                        }
                     }
-                    executedRcv = true;
+                    else
+                    {
+                        if (resultValue != 0)
+                        {
+                            RegisterValues[RCV_REGISTER] = sourceValue;
+                        }
+                    }
                 }
                 else
                 {
                     RegisterValues[destinationRegister] = resultValue;
                 }
                 ++Pc;
-                return executedRcv;
+                return operation;
+            }
+
+            public void RunProgram(bool sendRecieve, out bool send, out bool receive)
+            {
+                send = false;
+                receive = false;
+                while ((Pc >= 0) && (Pc < InstructionCount))
+                {
+                    var operation = ExecuteInstruction(sendRecieve);
+                    if (operation == Operation.RCV)
+                    {
+                        receive = true;
+                        return;
+                    }
+                    if (operation == Operation.SND)
+                    {
+                        send = true;
+                        return;
+                    }
+                }
+                throw new IndexOutOfRangeException($"Illegal pc {Pc} range 0-{InstructionCount - 1}");
             }
 
             void Parse(string[] lines)
@@ -250,16 +299,42 @@ namespace Day18
                     }
                     else if (op == Operation.SND)
                     {
-                        var sourceRegister = destRegToken[0];
-                        SourceValues[InstructionCount] = 0;
-                        SourceRegisters[InstructionCount] = sourceRegister;
+                        int srcValueRegister = 'V';
+                        if (destRegToken.Length == 1)
+                        {
+                            if ((destRegToken[0] >= 'a') && (destRegToken[0] <= 'z'))
+                            {
+                                SourceValues[InstructionCount] = 0;
+                                srcValueRegister = destRegToken[0];
+                            }
+                        }
+                        if (srcValueRegister == 'V')
+                        {
+                            SourceValues[InstructionCount] = int.Parse(destRegToken);
+                        }
+                        SourceRegisters[InstructionCount] = srcValueRegister;
                         DestinationRegisters[InstructionCount] = SND_REGISTER;
                     }
                     else if (op == Operation.RCV)
                     {
                         var destinationRegister = destRegToken[0];
-                        SourceRegisters[InstructionCount] = SND_REGISTER;
-                        DestinationRegisters[InstructionCount] = destinationRegister;
+                        if (destRegToken.Length == 1)
+                        {
+                            if ((destinationRegister >= 'a') && (destinationRegister <= 'z'))
+                            {
+                                SourceValues[InstructionCount] = 0;
+                                SourceRegisters[InstructionCount] = SND_REGISTER;
+                                DestinationRegisters[InstructionCount] = destinationRegister;
+                            }
+                            else
+                            {
+                                throw new IndexOutOfRangeException($"Invalid line '{line}' invalid register '{destinationRegister}'");
+                            }
+                        }
+                        else
+                        {
+                            throw new IndexOutOfRangeException($"Invalid line '{line}' invalid register '{destRegToken}'");
+                        }
                     }
                     else
                     {
@@ -267,6 +342,12 @@ namespace Day18
                     }
                     ++InstructionCount;
                 }
+            }
+
+            public void AddInput(long input)
+            {
+                Inputs[InputsCount] = input;
+                ++InputsCount;
             }
         };
 
@@ -279,7 +360,7 @@ namespace Day18
 
             if (part1)
             {
-                var result1 = FirstValidRcvFrequency();
+                var result1 = FirstValidRcvFrequency(1024);
                 Console.WriteLine($"Day18 : Result1 {result1}");
                 var expected = 8600;
                 if (result1 != expected)
@@ -289,9 +370,9 @@ namespace Day18
             }
             else
             {
-                var result2 = FindDeadlock();
+                var result2 = FindDeadlock(1024 * 1024);
                 Console.WriteLine($"Day18 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 7239;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -305,23 +386,69 @@ namespace Day18
             sPrograms[1] = new Prog(1, lines);
         }
 
-        public static long FirstValidRcvFrequency()
+        public static long FirstValidRcvFrequency(int maxCycleCount)
         {
             ref Prog prog = ref sPrograms[0];
             prog.Pc = 0;
-            while ((prog.Pc >= 0) && (prog.Pc < prog.InstructionCount))
+            for (var c = 0; c < maxCycleCount; ++c)
             {
-                if (prog.ExecuteInstruction() && (prog.RegisterValues[RCV_REGISTER] != 0))
+                prog.RunProgram(false, out _, out bool receive);
+                if (receive)
                 {
-                    return prog.RegisterValues[RCV_REGISTER];
+                    if (prog.RegisterValues[RCV_REGISTER] != 0)
+                    {
+                        return prog.RegisterValues[RCV_REGISTER];
+                    }
                 }
             }
-            throw new IndexOutOfRangeException($"Illegal pc {prog.Pc} range 0-{prog.InstructionCount - 1}");
+            throw new InvalidProgramException($"No first valid rcv frequency found after {maxCycleCount} cycles");
         }
 
-        public static long FindDeadlock()
+        public static long FindDeadlock(int maxCycleCount)
         {
-            return long.MinValue;
+            ref Prog prog0 = ref sPrograms[0];
+            ref Prog prog1 = ref sPrograms[1];
+
+            long output1Count = 0;
+
+            for (var c = 0; c < maxCycleCount; ++c)
+            {
+                bool receive0;
+                do
+                {
+                    prog0.RunProgram(true, out bool send0, out receive0);
+                    if (send0)
+                    {
+                        var output = prog0.RegisterValues[SND_REGISTER];
+                        prog1.AddInput(output);
+                        //Console.WriteLine($"Prog0 Sends {output} {prog1.InputsCount}");
+                    }
+                }
+                while (!receive0);
+
+                bool receive1;
+                do
+                {
+                    prog1.RunProgram(true, out bool send1, out receive1);
+                    if (send1)
+                    {
+                        var output = prog1.RegisterValues[SND_REGISTER];
+                        prog0.AddInput(output);
+                        //Console.WriteLine($"Prog1 Sends {output} {prog0.InputsCount}");
+                        ++output1Count;
+                    }
+                }
+                while (!receive1);
+
+                if (receive0 && receive1)
+                {
+                    if ((prog0.InputsCount == 0) && (prog1.InputsCount == 0))
+                    {
+                        return output1Count;
+                    }
+                }
+            }
+            throw new InvalidProgramException($"No deadlock found after {maxCycleCount} cycles");
         }
 
         public static void Run()
