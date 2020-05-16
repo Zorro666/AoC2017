@@ -48,6 +48,48 @@ At the time the recover operation is executed, the frequency of the last sound p
 
 What is the value of the recovered frequency (the value of the most recently played sound) the first time a rcv instruction is executed with a non-zero value?
 
+Your puzzle answer was 8600.
+
+--- Part Two ---
+
+As you congratulate yourself for a job well done, you notice that the documentation has been on the back of the tablet this entire time.
+While you actually got most of the instructions correct, there are a few key differences.
+This assembly code isn't about sound at all - it's meant to be run twice at the same time.
+
+Each running copy of the program has its own set of registers and follows the code independently - in fact, the programs don't even necessarily run at the same speed.
+To coordinate, they use the send (snd) and receive (rcv) instructions:
+
+snd X sends the value of X to the other program.
+These values wait in a queue until that program is ready to receive them.
+Each program has its own message queue, so a program can never receive a message it sent.
+rcv X receives the next value and stores it in register X.
+If no values are in the queue, the program waits for a value to be sent to it.
+Programs do not continue to the next instruction until they have received a value.
+Values are received in the order they are sent.
+Each program also has its own program ID (one 0 and the other 1); the register p should begin with this value.
+
+For example:
+
+snd 1
+snd 2
+snd p
+rcv a
+rcv b
+rcv c
+rcv d
+
+Both programs begin by sending three values to the other.
+Program 0 sends 1, 2, 0; program 1 sends 1, 2, 1.
+Then, each program receives a value (both 1) and stores it in a, receives another value (both 2) and stores it in b, and then each receives the program ID of the other program (program 0 receives 1; program 1 receives 0) and stores it in c.
+Each program now sees a different value in its own copy of register c.
+
+Finally, both programs try to rcv a fourth time, but no data is waiting for either of them, and they reach a deadlock.
+When this happens, both programs terminate.
+
+It should be noted that it would be equally valid for the programs to run at different speeds; for example, program 0 might have sent all three values and then stopped at the first rcv before program 1 executed even its first instruction.
+
+Once both of your programs have terminated (regardless of what caused them to do so), how many times did program 1 send a value?
+
 */
 
 namespace Day18
@@ -60,14 +102,175 @@ namespace Day18
 
         readonly static int MAX_NUM_INSTRUCTIONS = 1024;
         readonly static int MAX_NUM_REGISTERS = 256;
+        readonly static int MAX_NUM_PROGRAMS = 2;
 
-        readonly static Operation[] sOperations = new Operation[MAX_NUM_INSTRUCTIONS];
-        readonly static int[] sDestinationRegisters = new int[MAX_NUM_INSTRUCTIONS];
-        readonly static int[] sSourceRegisters = new int[MAX_NUM_INSTRUCTIONS];
-        readonly static int[] sSourceValues = new int[MAX_NUM_INSTRUCTIONS];
+        public struct Prog
+        {
+            public Operation[] Operations;
+            public int[] DestinationRegisters;
+            public long[] DestinationValues;
 
-        readonly static int[] sRegisterValues = new int[MAX_NUM_REGISTERS];
-        static int sInstructionCount;
+            public int[] SourceRegisters;
+            public long[] SourceValues;
+
+            public long[] RegisterValues;
+            public int InstructionCount;
+            public int Id;
+            public long Pc;
+
+            public Prog(int inId, string[] lines)
+            {
+                Operations = new Operation[MAX_NUM_INSTRUCTIONS];
+                DestinationRegisters = new int[MAX_NUM_INSTRUCTIONS];
+                DestinationValues = new long[MAX_NUM_INSTRUCTIONS];
+
+                SourceRegisters = new int[MAX_NUM_INSTRUCTIONS];
+                SourceValues = new long[MAX_NUM_INSTRUCTIONS];
+
+                RegisterValues = new long[MAX_NUM_REGISTERS];
+                InstructionCount = 0;
+                Id = inId;
+                Pc = 0;
+                Parse(lines);
+                RegisterValues['p'] = Id;
+            }
+
+            public bool ExecuteInstruction()
+            {
+                //snd X plays a sound with a frequency equal to the value of X.
+                //set X Y sets register X to the value of Y.
+                //add X Y increases register X by the value of Y.
+                //mul X Y sets register X to the result of multiplying the value contained in register X by the value of Y.
+                //mod X Y sets register X to the remainder of dividing the value contained in register X by the value of Y (that is, it sets X to the result of X modulo Y).
+                //rcv X recovers the frequency of the last sound played, but only when the value of X is not zero.(If it is zero, the command does nothing.)
+                //jgz X Y jumps with an offset of the value of Y, but only if the value of X is greater than zero.(An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
+                var executedRcv = false;
+                var sourceValue = SourceValues[Pc];
+                var sourceRegister = SourceRegisters[Pc];
+                if (sourceRegister != 'V')
+                {
+                    sourceValue = RegisterValues[sourceRegister];
+                }
+                var destinationValue = DestinationValues[Pc];
+                var destinationRegister = DestinationRegisters[Pc];
+                if (destinationRegister != 'V')
+                {
+                    destinationValue = RegisterValues[destinationRegister];
+                }
+                var resultValue = Operations[Pc] switch
+                {
+                    Operation.SND => sourceValue,
+                    Operation.SET => sourceValue,
+                    Operation.ADD => destinationValue + sourceValue,
+                    Operation.MUL => destinationValue * sourceValue,
+                    Operation.MOD => destinationValue % sourceValue,
+                    Operation.RCV => (sourceValue != 0) ? destinationValue : 0,
+                    Operation.JGZ => (destinationValue > 0) ? sourceValue : 1,
+                    _ => throw new InvalidProgramException($"Invalid opcode code")
+                };
+                if (Operations[Pc] == Operation.JGZ)
+                {
+                    Pc += resultValue;
+                    return false;
+                }
+                else if (Operations[Pc] == Operation.RCV)
+                {
+                    if (resultValue != 0)
+                    {
+                        RegisterValues[RCV_REGISTER] = sourceValue;
+                    }
+                    executedRcv = true;
+                }
+                else
+                {
+                    RegisterValues[destinationRegister] = resultValue;
+                }
+                ++Pc;
+                return executedRcv;
+            }
+
+            void Parse(string[] lines)
+            {
+                InstructionCount = 0;
+                foreach (var line in lines)
+                {
+                    var tokens = line.Trim().Split();
+                    if (tokens.Length < 2)
+                    {
+                        throw new InvalidProgramException($"Invalid line '{line}' need at least 2 tokens got {tokens.Length}");
+                    }
+                    var opToken = tokens[0].Trim();
+                    var op = opToken switch
+                    {
+                        "snd" => Operation.SND,
+                        "set" => Operation.SET,
+                        "add" => Operation.ADD,
+                        "mul" => Operation.MUL,
+                        "mod" => Operation.MOD,
+                        "rcv" => Operation.RCV,
+                        "jgz" => Operation.JGZ,
+                        _ => Operation.ILLEGAL,
+                    };
+                    Operations[InstructionCount] = op;
+
+                    var destRegToken = tokens[1].Trim();
+                    if ((op == Operation.SET) || (op == Operation.ADD) || (op == Operation.MUL) || (op == Operation.MOD) || (op == Operation.JGZ))
+                    {
+                        var dstValueToken = destRegToken;
+                        int dstValueRegister = 'V';
+                        if (dstValueToken.Length == 1)
+                        {
+                            if ((dstValueToken[0] >= 'a') && (dstValueToken[0] <= 'z'))
+                            {
+                                DestinationValues[InstructionCount] = int.MinValue;
+                                dstValueRegister = dstValueToken[0];
+                            }
+                        }
+                        if (dstValueRegister == 'V')
+                        {
+                            DestinationValues[InstructionCount] = int.Parse(dstValueToken);
+                        }
+                        DestinationRegisters[InstructionCount] = dstValueRegister;
+
+                        var srcValueToken = tokens[2].Trim();
+                        int srcValueRegister = 'V';
+                        if (srcValueToken.Length == 1)
+                        {
+                            if ((srcValueToken[0] >= 'a') && (srcValueToken[0] <= 'z'))
+                            {
+                                SourceValues[InstructionCount] = int.MinValue;
+                                srcValueRegister = srcValueToken[0];
+                            }
+                        }
+                        if (srcValueRegister == 'V')
+                        {
+                            SourceValues[InstructionCount] = int.Parse(srcValueToken);
+                        }
+                        SourceRegisters[InstructionCount] = srcValueRegister;
+                    }
+                    else if (op == Operation.SND)
+                    {
+                        var sourceRegister = destRegToken[0];
+                        SourceValues[InstructionCount] = 0;
+                        SourceRegisters[InstructionCount] = sourceRegister;
+                        DestinationRegisters[InstructionCount] = SND_REGISTER;
+                    }
+                    else if (op == Operation.RCV)
+                    {
+                        var destinationRegister = destRegToken[0];
+                        SourceRegisters[InstructionCount] = SND_REGISTER;
+                        DestinationRegisters[InstructionCount] = destinationRegister;
+                    }
+                    else
+                    {
+                        throw new InvalidProgramException($"Unknown operation '{op}' Line '{line}'");
+                    }
+                    ++InstructionCount;
+                }
+            }
+        };
+
+        static readonly Prog[] sPrograms = new Prog[MAX_NUM_PROGRAMS];
 
         private Program(string inputFile, bool part1)
         {
@@ -78,7 +281,7 @@ namespace Day18
             {
                 var result1 = FirstValidRcvFrequency();
                 Console.WriteLine($"Day18 : Result1 {result1}");
-                var expected = 280;
+                var expected = 8600;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -86,9 +289,9 @@ namespace Day18
             }
             else
             {
-                long result2 = -123;
+                var result2 = FindDeadlock();
                 Console.WriteLine($"Day18 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -98,140 +301,27 @@ namespace Day18
 
         public static void Parse(string[] lines)
         {
-            sInstructionCount = 0;
-            foreach (var line in lines)
-            {
-                var tokens = line.Trim().Split();
-                if (tokens.Length < 2)
-                {
-                    throw new InvalidProgramException($"Invalid line '{line}' need at least 2 tokens got {tokens.Length}");
-                }
-                var opToken = tokens[0].Trim();
-                var op = opToken switch
-                {
-                    "snd" => Operation.SND,
-                    "set" => Operation.SET,
-                    "add" => Operation.ADD,
-                    "mul" => Operation.MUL,
-                    "mod" => Operation.MOD,
-                    "rcv" => Operation.RCV,
-                    "jgz" => Operation.JGZ,
-                    _ => Operation.ILLEGAL,
-                };
-                sOperations[sInstructionCount] = op;
-
-                var destRegToken = tokens[1].Trim();
-                if (destRegToken.Length != 1)
-                {
-                    throw new InvalidProgramException($"Invalid line '{line}' destination register must be a single character '{destRegToken}'");
-                }
-                if ((destRegToken[0] < 'a') || (destRegToken[0] > 'z'))
-                {
-                    throw new InvalidProgramException($"Invalid line '{line}' destination register must be a-z '{destRegToken}'");
-                }
-
-                var destinationRegister = destRegToken[0];
-                if ((op == Operation.SET) || (op == Operation.ADD) || (op == Operation.MUL) || (op == Operation.MOD) || (op == Operation.JGZ))
-                {
-                    sDestinationRegisters[sInstructionCount] = destinationRegister;
-
-                    var srcValueToken = tokens[2].Trim();
-                    int srcValueRegister = 'V';
-                    if (srcValueToken.Length == 1)
-                    {
-                        if ((srcValueToken[0] >= 'a') && (srcValueToken[0] <= 'z'))
-                        {
-                            sSourceValues[sInstructionCount] = int.MinValue;
-                            srcValueRegister = srcValueToken[0];
-                        }
-                    }
-                    if (srcValueRegister == 'V')
-                    {
-                        sSourceValues[sInstructionCount] = int.Parse(srcValueToken);
-                    }
-                    sSourceRegisters[sInstructionCount] = srcValueRegister;
-                }
-                else if (op == Operation.SND)
-                {
-                    sSourceValues[sInstructionCount] = 0;
-                    sSourceRegisters[sInstructionCount] = destinationRegister;
-                    sDestinationRegisters[sInstructionCount] = SND_REGISTER;
-                }
-                else if (op == Operation.RCV)
-                {
-                    sSourceRegisters[sInstructionCount] = SND_REGISTER;
-                    sDestinationRegisters[sInstructionCount] = destinationRegister;
-                }
-                else
-                {
-                    throw new InvalidProgramException($"Unknown operation '{op}' Line '{line}'");
-                }
-                ++sInstructionCount;
-            }
+            sPrograms[0] = new Prog(0, lines);
+            sPrograms[1] = new Prog(1, lines);
         }
 
-        public static int FirstValidRcvFrequency()
+        public static long FirstValidRcvFrequency()
         {
-            var pc = 0;
-            while (pc >= 0)
+            ref Prog prog = ref sPrograms[0];
+            prog.Pc = 0;
+            while ((prog.Pc >= 0) && (prog.Pc < prog.InstructionCount))
             {
-                pc = ExecuteInstruction(pc);
-                if (sRegisterValues[RCV_REGISTER] != 0)
+                if (prog.ExecuteInstruction() && (prog.RegisterValues[RCV_REGISTER] != 0))
                 {
-                    return sRegisterValues[RCV_REGISTER];
-                }
-                if (pc >= sInstructionCount)
-                {
-                    throw new IndexOutOfRangeException($"Illegal pc {pc} range 0-{sInstructionCount - 1}");
+                    return prog.RegisterValues[RCV_REGISTER];
                 }
             }
-            throw new NotImplementedException();
+            throw new IndexOutOfRangeException($"Illegal pc {prog.Pc} range 0-{prog.InstructionCount - 1}");
         }
 
-        static int ExecuteInstruction(int pc)
+        public static long FindDeadlock()
         {
-            //snd X plays a sound with a frequency equal to the value of X.
-            //set X Y sets register X to the value of Y.
-            //add X Y increases register X by the value of Y.
-            //mul X Y sets register X to the result of multiplying the value contained in register X by the value of Y.
-            //mod X Y sets register X to the remainder of dividing the value contained in register X by the value of Y (that is, it sets X to the result of X modulo Y).
-            //rcv X recovers the frequency of the last sound played, but only when the value of X is not zero.(If it is zero, the command does nothing.)
-            //jgz X Y jumps with an offset of the value of Y, but only if the value of X is greater than zero.(An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
-            var sourceValue = sSourceValues[pc];
-            var sourceRegister = sSourceRegisters[pc];
-            if (sourceRegister != 'V')
-            {
-                sourceValue = sRegisterValues[sourceRegister];
-            }
-            var destinationRegister = sDestinationRegisters[pc];
-            var destinationRegisterValue = sRegisterValues[destinationRegister];
-            var resultValue = sOperations[pc] switch
-            {
-                Operation.SND => sourceValue,
-                Operation.SET => sourceValue,
-                Operation.ADD => destinationRegisterValue + sourceValue,
-                Operation.MUL => destinationRegisterValue * sourceValue,
-                Operation.MOD => destinationRegisterValue % sourceValue,
-                Operation.RCV => (sourceValue != 0) ? destinationRegisterValue : 0,
-                Operation.JGZ => (destinationRegisterValue > 0) ? sourceValue : 1,
-                _ => throw new InvalidProgramException($"Invalid opcode code")
-            };
-            if (sOperations[pc] == Operation.JGZ)
-            {
-                return pc + resultValue;
-            }
-            else if (sOperations[pc] == Operation.RCV)
-            {
-                if (resultValue != 0)
-                {
-                    sRegisterValues[RCV_REGISTER] = sourceValue;
-                }
-            }
-            else
-            {
-                sRegisterValues[destinationRegister] = resultValue;
-            }
-            return pc + 1;
+            return long.MinValue;
         }
 
         public static void Run()

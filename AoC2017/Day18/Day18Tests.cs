@@ -23,5 +23,21 @@ namespace Day18
             Program.Parse(program);
             Assert.That(Program.FirstValidRcvFrequency(), Is.EqualTo(expected));
         }
+
+        [Test]
+        [TestCase(new string[] {
+"snd 1",
+"snd 2",
+"snd p",
+"rcv a",
+"rcv b",
+"rcv c",
+"rcv d"
+        }, 3, TestName = "FindDeadlock 3")]
+        public void FindDeadlock(string[] program, int expected)
+        {
+            Program.Parse(program);
+            Assert.That(Program.FindDeadlock(), Is.EqualTo(expected));
+        }
     }
 }
