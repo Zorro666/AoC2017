@@ -6,10 +6,25 @@ namespace Day22
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day22(string directions, int expected)
+        [TestCase(new string[] {
+"..#",
+"#..",
+"..."
+        }, 7, 5, TestName = "InfectedBurstCount(7) = 5")]
+        [TestCase(new string[] {
+"..#",
+"#..",
+"..."
+        }, 70, 41, TestName = "InfectedBurstCount(70) = 41")]
+        [TestCase(new string[] {
+"..#",
+"#..",
+"..."
+        }, 10000, 5587, TestName = "InfectedBurstCount(10000) = 5587")]
+        public void Day22(string[] start, int bursts, int expected)
         {
-            Assert.Fail();
+            Program.Parse(start);
+            Assert.That(Program.InfectedBurstCount(bursts), Is.EqualTo(expected));
         }
     }
 }
