@@ -6,10 +6,16 @@ namespace Day23
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day23(string directions, int expected)
+        [TestCase(new string[] {
+"set a 4",
+"sub a 1",
+"mul b b",
+"jnz a -2"
+        }, 4, TestName = "MulCount 4")]
+        public void MulCount(string[] program, int expected)
         {
-            Assert.Fail();
+            Program.Parse(program);
+            Assert.That(Program.MulCount(), Is.EqualTo(expected));
         }
     }
 }
