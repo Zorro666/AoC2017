@@ -49,10 +49,11 @@ namespace Day23
     {
         public enum Operation { ILLEGAL = 0, SET, SUB, MUL, JNZ };
 
-        readonly static int MAX_NUM_INSTRUCTIONS = 1024;
-        readonly static int MAX_NUM_REGISTERS = 256;
-        readonly static int MAX_NUM_PROGRAMS = 2;
-        readonly static int MAX_NUM_INPUTS = 1024;
+        const long MAX_CYCLES = 1L * 1024 * 1024;
+        const int MAX_NUM_INSTRUCTIONS = 1024;
+        const int MAX_NUM_REGISTERS = 256;
+        const int MAX_NUM_PROGRAMS = 2;
+        const int MAX_NUM_INPUTS = 1024;
 
         public struct Prog
         {
@@ -132,8 +133,9 @@ namespace Day23
                 return operation;
             }
 
-            public long RunProgram()
+            public long RunProgram(long maxCycles)
             {
+                long cycleCount = 0;
                 long mulCount = 0L;
                 while ((Pc >= 0) && (Pc < InstructionCount))
                 {
@@ -142,7 +144,18 @@ namespace Day23
                     {
                         ++mulCount;
                     }
+                    cycleCount++;
+                    if (cycleCount > maxCycles)
+                    {
+                        Console.WriteLine($"Register h : {RegisterValues['h']}");
+                        throw new InvalidProgramException($"Ran out of cycles {MAX_CYCLES}");
+                    }
+                    if (cycleCount % (1L * 512 * 1024 * 1024) == 0)
+                    {
+                        Console.WriteLine($"Register h : {RegisterValues['h']}");
+                    }
                 }
+                Console.WriteLine($"Register h : {RegisterValues['h']}");
                 return mulCount;
             }
 
@@ -236,9 +249,9 @@ namespace Day23
             }
             else
             {
-                var result2 = -123;
+                var result2 = OptimisedPart2();
                 Console.WriteLine($"Day23 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 905;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -253,7 +266,52 @@ namespace Day23
 
         public static long MulCount()
         {
-            return sPrograms[0].RunProgram();
+            return sPrograms[0].RunProgram(MAX_CYCLES);
+        }
+
+        static long OptimisedPart2()
+        {
+            long a;
+            long b;
+            long c;
+            long d;
+            long f;
+            long h = 0;
+
+            a = 1;
+            b = 67;
+            c = b;
+            if (a != 0)
+            {
+                b *= 100;
+                b -= -100000;
+                c = b;
+                c -= -17000;
+            }
+
+            do
+            {
+                f = 1;
+                for (d = 2; d < b; ++d)
+                {
+                    if ((b % d) == 0)
+                    {
+                        f = 0;
+                        break;
+                    }
+                }
+                if (f == 0)
+                {
+                    ++h;
+                    //Console.WriteLine($"b {b} c {c} h {h}");
+                }
+                if (b == c)
+                {
+                    return h;
+                }
+                b += 17;
+            }
+            while (true);
         }
 
         public static void Run()
