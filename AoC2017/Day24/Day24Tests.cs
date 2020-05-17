@@ -6,10 +6,20 @@ namespace Day24
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day24(string directions, int expected)
+        [TestCase(new string[] {
+"0/2",
+"2/2",
+"2/3",
+"3/4",
+"3/5",
+"0/1",
+"10/1",
+"9/10"
+        }, 31, TestName = "StrongestBridge 31")]
+        public void StrongestBridge(string[] input, int expected)
         {
-            Assert.Fail();
+            Program.Parse(input);
+            Assert.That(Program.StrongestBridge(), Is.EqualTo(expected));
         }
     }
 }
