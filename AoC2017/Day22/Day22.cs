@@ -202,7 +202,12 @@ namespace Day22
 {
     class Program
     {
-        readonly static int MAX_BOARD_SIZE = 512;
+        const int CELL_CLEAN = 0;
+        const int CELL_WEAKENED = 1;
+        const int CELL_INFECTED = 2;
+        const int CELL_FLAGGED = 3;
+
+        const int MAX_BOARD_SIZE = 1024;
         readonly static int[,] sBoard = new int[MAX_BOARD_SIZE, MAX_BOARD_SIZE];
         static int sVirusX;
         static int sVirusY;
@@ -226,9 +231,9 @@ namespace Day22
             }
             else
             {
-                var result2 = -123;
+                var result2 = InfectedBurstCountAdvanced(10000000);
                 Console.WriteLine($"Day22 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 2512079;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -277,8 +282,8 @@ namespace Day22
                 {
                     sBoard[x0 + x, y0 + y] = line[x] switch
                     {
-                        '.' => 0,
-                        '#' => 1,
+                        '.' => CELL_CLEAN,
+                        '#' => CELL_INFECTED,
                         _ => throw new InvalidProgramException($"Invalid input at {x},{y} '{line[x]}'")
                     };
                 }
@@ -292,7 +297,15 @@ namespace Day22
             {
                 for (var x = 0; x < MAX_BOARD_SIZE; ++x)
                 {
-                    var c = sBoard[x, y] == 1 ? '#' : '.';
+                    var c = sBoard[x, y] switch
+                    {
+                        CELL_CLEAN => '.',
+                        CELL_WEAKENED => 'W',
+                        CELL_INFECTED => '#',
+                        CELL_FLAGGED => 'F',
+                        _ => throw new ArgumentOutOfRangeException($"Unknown cell value {sBoard[x, y]}")
+                    };
+
                     if ((x == sVirusX) && (y == sVirusY))
                     {
                         if ((sVirusDY == 1) && (sVirusDX == 0))
@@ -323,25 +336,90 @@ namespace Day22
             Console.WriteLine("--------------------------------");
         }
 
-        static int SingleStep()
+        static int SingleStepBasic()
         {
-            var wasClean = sBoard[sVirusX, sVirusY] == 0;
+            var cellState = sBoard[sVirusX, sVirusY];
+            var newInfection = 0;
 
             int newDX;
             int newDY;
-            if (wasClean)
+            switch (cellState)
             {
-                // turn left = (+dy,-dx)
-                newDX = +sVirusDY;
-                newDY = -sVirusDX;
-                sBoard[sVirusX, sVirusY] = 1;
+                case CELL_CLEAN:
+                    // turn left = (+dy,-dx)
+                    newDX = +sVirusDY;
+                    newDY = -sVirusDX;
+                    sBoard[sVirusX, sVirusY] = CELL_INFECTED;
+                    newInfection = 1;
+                    break;
+                case CELL_INFECTED:
+                    // turn right = (-dy,+dx)
+                    newDX = -sVirusDY;
+                    newDY = +sVirusDX;
+                    sBoard[sVirusX, sVirusY] = 0;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException($"Unknown cellstate {cellState} at {sVirusX}, {sVirusY}");
             }
-            else
+
+            sVirusDX = newDX;
+            sVirusDY = newDY;
+            sVirusX += sVirusDX;
+            sVirusY += sVirusDY;
+
+            if ((sVirusX <= 0) || (sVirusX >= MAX_BOARD_SIZE))
             {
-                // turn right = (-dy,+dx)
-                newDX = -sVirusDY;
-                newDY = +sVirusDX;
-                sBoard[sVirusX, sVirusY] = 0;
+                throw new IndexOutOfRangeException($"Virus X out of range 0->{MAX_BOARD_SIZE}");
+            }
+
+            if ((sVirusY <= 0) || (sVirusY >= MAX_BOARD_SIZE))
+            {
+                throw new IndexOutOfRangeException($"Virus Y out of range 0->{MAX_BOARD_SIZE}");
+            }
+
+            return newInfection;
+        }
+
+        static int SingleStepAdvanced()
+        {
+            var cellState = sBoard[sVirusX, sVirusY];
+            var newInfection = 0;
+
+            int newDX = sVirusDX;
+            int newDY = sVirusDY;
+            switch (cellState)
+            {
+                case CELL_CLEAN:
+                    // Clean nodes become weakened. : 0 -> 1
+                    // If it is clean, it turns left.
+                    // turn left = (+dy,-dx)
+                    newDX = +sVirusDY;
+                    newDY = -sVirusDX;
+                    sBoard[sVirusX, sVirusY] = CELL_WEAKENED;
+                    break;
+                case CELL_WEAKENED:
+                    // Weakened nodes become infected. 1 -> 2
+                    // If it is weakened, it does not turn, and will continue moving in the same direction.
+                    sBoard[sVirusX, sVirusY] = CELL_INFECTED;
+                    newInfection = 1;
+                    break;
+                case CELL_INFECTED:
+                    // Infected nodes become flagged.  2 -> 3
+                    // If it is infected, it turns right.
+                    // turn right = (-dy,+dx)
+                    newDX = -sVirusDY;
+                    newDY = +sVirusDX;
+                    sBoard[sVirusX, sVirusY] = CELL_FLAGGED;
+                    break;
+                case CELL_FLAGGED:
+                    // Flagged nodes become clean. 3 -> 4
+                    // If it is flagged, it reverses direction, and will go back the way it came.
+                    newDX = -sVirusDX;
+                    newDY = -sVirusDY;
+                    sBoard[sVirusX, sVirusY] = CELL_CLEAN;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException($"Unknown cellstate {cellState} at {sVirusX}, {sVirusY}");
             }
             sVirusDX = newDX;
             sVirusDY = newDY;
@@ -358,7 +436,7 @@ namespace Day22
                 throw new IndexOutOfRangeException($"Virus Y out of range 0->{MAX_BOARD_SIZE}");
             }
 
-            return wasClean ? 1 : 0;
+            return newInfection;
         }
 
         public static long InfectedBurstCount(int burstCount)
@@ -372,7 +450,25 @@ namespace Day22
             var totalInfectedBurstCount = 0L;
             for (var b = 0; b < burstCount; ++b)
             {
-                totalInfectedBurstCount += SingleStep();
+                totalInfectedBurstCount += SingleStepBasic();
+                //OutputBoard();
+            }
+
+            return totalInfectedBurstCount;
+        }
+
+        public static long InfectedBurstCountAdvanced(int burstCount)
+        {
+            sVirusX = MAX_BOARD_SIZE / 2;
+            sVirusY = MAX_BOARD_SIZE / 2;
+            sVirusDX = 0;
+            sVirusDY = -1;
+
+            //OutputBoard();
+            var totalInfectedBurstCount = 0L;
+            for (var b = 0; b < burstCount; ++b)
+            {
+                totalInfectedBurstCount += SingleStepAdvanced();
                 //OutputBoard();
             }
 
