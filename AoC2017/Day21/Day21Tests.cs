@@ -6,10 +6,14 @@ namespace Day21
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day21(string directions, int expected)
+        [TestCase(new string[] {
+"../.# => ##./#../...",
+".#./..#/### => #..#/..../..../#..#"
+            }, 2, 12, TestName = "PixelsOn(2) = 12")]
+        public void PixelsOn(string[] rules, int iterations, int expected)
         {
-            Assert.Fail();
+            Program.Parse(rules);
+            Assert.That(Program.PixelsOn(2), Is.EqualTo(12));
         }
     }
 }
