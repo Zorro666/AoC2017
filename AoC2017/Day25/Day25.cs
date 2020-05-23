@@ -75,42 +75,53 @@ In the above example, the diagnostic checksum is 3.
 
 Recreate the Turing machine and save the computer! What is the diagnostic checksum it produces once it's working again?
 
+Your puzzle answer was 633.
+
+--- Part Two ---
+
+The Turing machine, and soon the entire computer, springs back to life. A console glows dimly nearby, awaiting your command.
+
+> reboot printer
+Error: That command requires priority 50. You currently have priority 0.
+You must deposit 50 stars to increase your priority to the required level.
+The console flickers for a moment, and then prints another message:
+
+Star accepted.
+You must deposit 49 stars to increase your priority to the required level.
+The garbage collector winks at you, then continues sweeping.
+
 */
 
 namespace Day25
 {
     class Program
     {
-        private Program(string inputFile, bool part1)
+        const long MAX_NUM_TAPE_SLOTS = 1L * 1024 * 16;
+        readonly static byte[] sTapeValues = new byte[MAX_NUM_TAPE_SLOTS];
+
+        const int MAX_NUM_STATES = 1024;
+        static int sNumStates;
+        readonly static string[] sStateNames = new string[MAX_NUM_STATES];
+        readonly static byte[,] sStateWriteValues = new byte[MAX_NUM_STATES, 2];
+        readonly static int[,] sStateMoveDelta = new int[MAX_NUM_STATES, 2];
+        readonly static string[,] sStateTargetStates = new string[MAX_NUM_STATES, 2];
+        readonly static int[,] sStateTargetStateIndexes = new int[MAX_NUM_STATES, 2];
+
+        static string sStartingState = null;
+        static long sTotalStepsCount = int.MinValue;
+
+        private Program(string inputFile)
         {
             var lines = AoC.Program.ReadLines(inputFile);
             Parse(lines);
 
-            if (part1)
+            var result1 = RunMachine();
+            Console.WriteLine($"Day25 : Result1 {result1}");
+            var expected = 633;
+            if (result1 != expected)
             {
-                var result1 = RunMachine();
-                Console.WriteLine($"Day25 : Result1 {result1}");
-                var expected = 280;
-                if (result1 != expected)
-                {
-                    throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
-                }
+                throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
             }
-            else
-            {
-                var result2 = -123;
-                Console.WriteLine($"Day25 : Result2 {result2}");
-                var expected = 1797;
-                if (result2 != expected)
-                {
-                    throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
-                }
-            }
-        }
-
-        public static long RunMachine()
-        {
-            return long.MinValue;
         }
 
         public static void Parse(string[] lines)
@@ -120,9 +131,9 @@ namespace Day25
                 throw new InvalidProgramException($"Invalid input need at least 3 lines got {lines.Length}");
             }
 
-            long stepsCount = long.MinValue;
-            string startingState = null;
-
+            sNumStates = 0;
+            sStartingState = null;
+            sTotalStepsCount = long.MinValue;
 
             bool expectingStartLine = true;
             bool expectingStepsLine = false;
@@ -132,6 +143,10 @@ namespace Day25
             bool expectingMoveLine = false;
             bool expectingContinueLine = false;
 
+            long currentIfValue = long.MinValue;
+            bool foundIfOne = false;
+            bool foundIfZero = false;
+
             foreach (var line in lines)
             {
                 var trimLine = line.Trim();
@@ -140,12 +155,6 @@ namespace Day25
                     continue;
                 }
                 // 'Begin in state A.'
-                // 'Perform a diagnostic checksum after 6 steps.'
-                // 'In state A:'
-                // '  If the current value is 0:'
-                // '    - Write the value 1.'
-                // '    - Move one slot to the right.'
-                // '    - Continue with state B.'
                 if (trimLine.StartsWith("Begin in state "))
                 {
                     if (!expectingStartLine)
@@ -157,10 +166,12 @@ namespace Day25
                     {
                         throw new InvalidProgramException($"Invalid start line '{trimLine}' expected 4 tokens got {startTokens.Length}");
                     }
-                    startingState = startTokens[3].TrimEnd('.');
+
+                    sStartingState = startTokens[3].TrimEnd('.');
                     expectingStartLine = false;
                     expectingStepsLine = true;
                 }
+                // 'Perform a diagnostic checksum after 6 steps.'
                 else if (trimLine.StartsWith("Perform a diagnostic checksum after "))
                 {
                     if (!expectingStepsLine)
@@ -176,60 +187,240 @@ namespace Day25
                     {
                         throw new InvalidProgramException($"Invalid steps line '{trimLine}' expected 'steps.' got {stepsTokens[6]}");
                     }
-                    stepsCount = long.Parse(stepsTokens[5]);
+
+                    sTotalStepsCount = long.Parse(stepsTokens[5]);
                     expectingStepsLine = false;
                     expectingStartStateLine = true;
                 }
+                // 'In state A:'
                 else if (trimLine.StartsWith("In state "))
                 {
                     if (!expectingStartStateLine)
                     {
                         throw new InvalidProgramException($"Invalid line '{trimLine}' not expecting the start of a state block");
                     }
+                    var stateTokens = trimLine.Split();
+                    if (stateTokens.Length != 3)
+                    {
+                        throw new InvalidProgramException($"Invalid state line '{trimLine}' expected 3 tokens got {stateTokens.Length}");
+                    }
+
+                    var stateName = stateTokens[2].TrimEnd(':');
+                    for (var s = 0; s < sNumStates; ++s)
+                    {
+                        if (sStateNames[s] == stateName)
+                        {
+                            throw new InvalidProgramException($"Invalid state line '{trimLine}' state '{stateName}' already exists");
+                        }
+                    }
+                    sStateNames[sNumStates] = stateName;
                     expectingStartStateLine = false;
                     expectingStartIfLine = true;
+                    foundIfOne = false;
+                    foundIfZero = false;
                 }
+                // '  If the current value is 0:'
                 else if (trimLine.StartsWith("If the current value is "))
                 {
                     if (!expectingStartIfLine)
                     {
                         throw new InvalidProgramException($"Invalid line '{trimLine}' not expecting the start of a if block");
                     }
+                    var valueTokens = trimLine.Split();
+                    if (valueTokens.Length != 6)
+                    {
+                        throw new InvalidProgramException($"Invalid if value line '{trimLine}' expected 6 tokens got {valueTokens.Length}");
+                    }
+                    var valueToken = valueTokens[5].TrimEnd(':');
+                    currentIfValue = long.Parse(valueToken);
+                    if (currentIfValue == 0)
+                    {
+                        if (foundIfZero)
+                        {
+                            throw new InvalidProgramException($"Invalid if value line '{trimLine}' already found if 0 line");
+                        }
+                        foundIfZero = true;
+                    }
+                    else if (currentIfValue == 1)
+                    {
+                        if (foundIfOne)
+                        {
+                            throw new InvalidProgramException($"Invalid if value line '{trimLine}' already found if 1 line");
+                        }
+                        foundIfOne = true;
+                    }
+                    else
+                    {
+                        throw new InvalidProgramException($"Invalid if value line '{trimLine}' test value must be 0 or 1 got {currentIfValue}");
+                    }
+
                     expectingStartIfLine = false;
                     expectingWriteValueLine = true;
                 }
+                // '    - Write the value 1.'
                 else if (trimLine.StartsWith("- Write the value"))
                 {
                     if (!expectingWriteValueLine)
                     {
                         throw new InvalidProgramException($"Invalid line '{trimLine}' not expecting the start of a if block");
                     }
+                    var valueTokens = trimLine.Split();
+                    if (valueTokens.Length != 5)
+                    {
+                        throw new InvalidProgramException($"Invalid write value line '{trimLine}' expected 5 tokens got {valueTokens.Length}");
+                    }
+                    var valueToken = valueTokens[4].TrimEnd('.');
+                    var writeValue = byte.Parse(valueToken);
+                    if ((writeValue != 0) && (writeValue != 1))
+                    {
+                        throw new InvalidProgramException($"Invalid write value line '{trimLine}' write value must be 0 or 1 got {writeValue}");
+                    }
+
+                    sStateWriteValues[sNumStates, currentIfValue] = writeValue;
                     expectingWriteValueLine = false;
                     expectingMoveLine = true;
                 }
+                // '    - Move one slot to the right.'
                 else if (trimLine.StartsWith("- Move one slot to the "))
                 {
+                    if (!expectingMoveLine)
+                    {
+                        throw new InvalidProgramException($"Invalid line '{trimLine}' not expecting a move slot line");
+                    }
+                    var slotTokens = trimLine.Split();
+                    if (slotTokens.Length != 7)
+                    {
+                        throw new InvalidProgramException($"Invalid move line '{trimLine}' expected 7 tokens got {slotTokens.Length}");
+                    }
+                    var move = slotTokens[6].TrimEnd('.');
+                    if ((move != "left") && (move != "right"))
+                    {
+                        throw new InvalidProgramException($"Invalid move line '{trimLine}' move value must be 'left' or 'right' {move}");
+                    }
+
+                    sStateMoveDelta[sNumStates, currentIfValue] = (move == "left") ? -1 : +1;
                     expectingMoveLine = false;
                     expectingContinueLine = true;
                 }
+                // '    - Continue with state B.'
                 else if (trimLine.StartsWith("- Continue with state "))
                 {
+                    if (!expectingContinueLine)
+                    {
+                        throw new InvalidProgramException($"Invalid line '{trimLine}' not expecting a continue line");
+                    }
+                    var stateTokens = trimLine.Split();
+                    if (stateTokens.Length != 5)
+                    {
+                        throw new InvalidProgramException($"Invalid continue state line '{trimLine}' expected 7 tokens got {stateTokens.Length}");
+                    }
+
+                    sStateTargetStates[sNumStates, currentIfValue] = stateTokens[4].TrimEnd('.');
                     expectingContinueLine = false;
-                    expectingStartIfLine = true;
+
+                    if (foundIfOne && foundIfZero)
+                    {
+                        expectingStartIfLine = false;
+                        expectingStartStateLine = true;
+                        ++sNumStates;
+                    }
+                    else
+                    {
+                        expectingStartIfLine = true;
+                    }
                 }
                 else
                 {
                     throw new InvalidProgramException($"Unhandled line '{trimLine}'");
                 }
             }
-            Console.WriteLine($"Starting State '{startingState}' StepsCount {stepsCount}");
+
+            for (var s = 0; s < sNumStates; ++s)
+            {
+                for (var i = 0; i < 2; ++i)
+                {
+                    var targetState = sStateTargetStates[s, i];
+                    var targetIndex = int.MinValue;
+                    for (var s2 = 0; s2 < sNumStates; ++s2)
+                    {
+                        if (sStateNames[s2] == targetState)
+                        {
+                            targetIndex = s2;
+                            break;
+                        }
+                    }
+                    if (targetIndex == int.MinValue)
+                    {
+                        throw new InvalidProgramException($"Failed to find target state '{targetState}");
+                    }
+                    sStateTargetStateIndexes[s, i] = targetIndex;
+                }
+            }
+
+            /*
+            Console.WriteLine($"Starting State '{sStartingState}' StepsCount {sTotalStepsCount}");
+            for (var s = 0; s < sNumStates; ++s)
+            {
+                Console.WriteLine($"State '{sStateNames[s]};");
+                for (var i = 0; i < 2; ++i)
+                {
+                    Console.WriteLine($"  If value is {i}");
+                    Console.WriteLine($"   - Write {sStateWriteValues[s, i]}");
+                    Console.WriteLine($"   - Move {sStateMoveDelta[s, i]} '{((sStateMoveDelta[s, i] == -1) ? "left" : "right")}'");
+                    Console.WriteLine($"   - Goto {sStateTargetStateIndexes[s, i]} '{sStateTargetStates[s, i]}'");
+                }
+            }
+            */
         }
+
+        public static long RunMachine()
+        {
+            var currentTapeIndex = MAX_NUM_TAPE_SLOTS / 2;
+
+            var currentState = int.MinValue;
+            for (var s = 0; s < sNumStates; ++s)
+            {
+                if (sStateNames[s] == sStartingState)
+                {
+                    currentState = s;
+                    break;
+                }
+            }
+            for (var i = 0; i < sTotalStepsCount; ++i)
+            {
+                if ((currentState < 0) || (currentState >= sNumStates))
+                {
+                    throw new InvalidProgramException($"Invalid currentState {currentState} range is 0-{sNumStates}");
+                }
+                if ((currentTapeIndex < 0) || (currentTapeIndex >= MAX_NUM_TAPE_SLOTS))
+                {
+                    throw new InvalidProgramException($"Invalid currentTapeIndex {currentTapeIndex} range is 0-{MAX_NUM_TAPE_SLOTS}");
+                }
+                var currentValue = sTapeValues[currentTapeIndex];
+                if ((currentValue != 0) && (currentValue != 1))
+                {
+                    throw new InvalidProgramException($"Invalid currentValue {currentValue} not 0 or 1");
+                }
+                sTapeValues[currentTapeIndex] = sStateWriteValues[currentState, currentValue];
+                currentTapeIndex += sStateMoveDelta[currentState, currentValue];
+                currentState = sStateTargetStateIndexes[currentState, currentValue];
+            }
+            var crc = 0L;
+            for (var i = 0; i < MAX_NUM_TAPE_SLOTS; ++i)
+            {
+                if (sTapeValues[i] == 1)
+                {
+                    ++crc;
+                }
+            }
+            return crc;
+        }
+
 
         public static void Run()
         {
             Console.WriteLine("Day25 : Start");
-            _ = new Program("Day25/input.txt", true);
-            //_ = new Program("Day25/input.txt", false);
+            _ = new Program("Day25/input.txt");
             Console.WriteLine("Day25 : End");
         }
     }
