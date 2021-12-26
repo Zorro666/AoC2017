@@ -93,7 +93,7 @@ namespace Day24
             {
                 var result1 = StrongestBridge();
                 Console.WriteLine($"Day24 : Result1 {result1}");
-                var expected = 1511;
+                var expected = 1695;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -103,7 +103,7 @@ namespace Day24
             {
                 var result2 = StrongestLongestBridge();
                 Console.WriteLine($"Day24 : Result2 {result2}");
-                var expected = 1471;
+                var expected = 1673;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

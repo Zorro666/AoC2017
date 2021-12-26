@@ -313,7 +313,7 @@ namespace Day13
             {
                 var result1 = Escape(0);
                 Console.WriteLine($"Day13 : Result1 {result1}");
-                var expected = 1528;
+                var expected = 1960;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -323,7 +323,7 @@ namespace Day13
             {
                 var result2 = SmallestDelay();
                 Console.WriteLine($"Day13 : Result2 {result2}");
-                var expected = 3896406;
+                var expected = 3903378;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

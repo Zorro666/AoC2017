@@ -117,7 +117,7 @@ namespace Day25
 
             var result1 = RunMachine();
             Console.WriteLine($"Day25 : Result1 {result1}");
-            var expected = 633;
+            var expected = 2474;
             if (result1 != expected)
             {
                 throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");

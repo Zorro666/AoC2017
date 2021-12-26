@@ -241,7 +241,7 @@ namespace Day23
             {
                 var result1 = MulCount();
                 Console.WriteLine($"Day23 : Result1 {result1}");
-                var expected = 4225;
+                var expected = 9409;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -251,7 +251,7 @@ namespace Day23
             {
                 var result2 = OptimisedPart2();
                 Console.WriteLine($"Day23 : Result2 {result2}");
-                var expected = 905;
+                var expected = 913;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -279,7 +279,7 @@ namespace Day23
             long h = 0;
 
             a = 1;
-            b = 67;
+            b = 99;
             c = b;
             if (a != 0)
             {

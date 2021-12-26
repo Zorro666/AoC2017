@@ -28,7 +28,7 @@ namespace Day13
         public void SmallestDelay(string[] layers, int expected)
         {
             Program.Parse(layers);
-            Assert.That(Program.SmallestDelay, Is.EqualTo(expected));
+            Assert.That(Program.SmallestDelay(), Is.EqualTo(expected));
         }
     }
 }

@@ -102,7 +102,7 @@ namespace Day20
             {
                 var result1 = ClosestParticle();
                 Console.WriteLine($"Day20 : Result1 {result1}");
-                var expected = 344;
+                var expected = 161;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -112,7 +112,7 @@ namespace Day20
             {
                 var result2 = RemainingParticles();
                 Console.WriteLine($"Day20 : Result2 {result2}");
-                var expected = 404;
+                var expected = 438;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

@@ -71,7 +71,7 @@ namespace Day02
             {
                 var result1 = Checksum;
                 Console.WriteLine($"Day02 : Result1 {result1}");
-                var expected = 32121;
+                var expected = 37923;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -81,7 +81,7 @@ namespace Day02
             {
                 var result2 = Checksum2;
                 Console.WriteLine($"Day02 : Result2 {result2}");
-                var expected = 197;
+                var expected = 263;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

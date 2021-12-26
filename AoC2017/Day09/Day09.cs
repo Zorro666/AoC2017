@@ -96,7 +96,7 @@ namespace Day09
             {
                 var result1 = Score(input);
                 Console.WriteLine($"Day09 : Result1 {result1}");
-                var expected = 11089;
+                var expected = 10800;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -106,7 +106,7 @@ namespace Day09
             {
                 var result2 = CountGarbage(input);
                 Console.WriteLine($"Day09 : Result2 {result2}");
-                var expected = 5288;
+                var expected = 4522;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

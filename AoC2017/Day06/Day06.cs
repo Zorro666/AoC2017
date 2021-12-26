@@ -67,7 +67,7 @@ namespace Day06
             {
                 var result1 = InfiniteLoop(start).stepCount;
                 Console.WriteLine($"Day06 : Result1 {result1}");
-                var expected = 7864;
+                var expected = 11137;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -77,7 +77,7 @@ namespace Day06
             {
                 var result2 = InfiniteLoop(start).loop;
                 Console.WriteLine($"Day06 : Result2 {result2}");
-                var expected = 1695;
+                var expected = 1037;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -143,7 +143,7 @@ namespace Day06
                     --giveOut;
                 }
                 ++stepCount;
-            } while (stepCount < 10000);
+            } while (stepCount < 50000);
 
             return (-1, -1);
         }

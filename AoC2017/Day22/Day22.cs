@@ -223,7 +223,7 @@ namespace Day22
             {
                 var result1 = InfectedBurstCount(10000);
                 Console.WriteLine($"Day22 : Result1 {result1}");
-                var expected = 5322;
+                var expected = 5406;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -233,7 +233,7 @@ namespace Day22
             {
                 var result2 = InfectedBurstCountAdvanced(10000000);
                 Console.WriteLine($"Day22 : Result2 {result2}");
-                var expected = 2512079;
+                var expected = 2511640;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

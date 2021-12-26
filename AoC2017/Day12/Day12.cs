@@ -74,7 +74,7 @@ namespace Day12
             {
                 var result1 = ProgramCount(0);
                 Console.WriteLine($"Day12 : Result1 {result1}");
-                var expected = 169;
+                var expected = 141;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -84,7 +84,7 @@ namespace Day12
             {
                 var result2 = GroupCount();
                 Console.WriteLine($"Day12 : Result2 {result2}");
-                var expected = 179;
+                var expected = 171;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

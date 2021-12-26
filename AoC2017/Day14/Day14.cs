@@ -81,7 +81,7 @@ namespace Day14
             {
                 var result1 = UsedSquares(hash);
                 Console.WriteLine($"Day14 : Result1 {result1}");
-                var expected = 8222;
+                var expected = 8214;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -91,7 +91,7 @@ namespace Day14
             {
                 var result2 = CountRegions(hash);
                 Console.WriteLine($"Day14 : Result2 {result2}");
-                var expected = 1086;
+                var expected = 1093;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

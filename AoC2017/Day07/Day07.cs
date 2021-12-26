@@ -116,7 +116,7 @@ namespace Day07
             {
                 var result1 = BottomProgram;
                 Console.WriteLine($"Day07 : Result1 {result1}");
-                var expected = "bpvhwhh";
+                var expected = "cqmvs";
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -126,7 +126,7 @@ namespace Day07
             {
                 var result2 = BalanceTower;
                 Console.WriteLine($"Day07 : Result2 {result2}");
-                var expected = 256;
+                var expected = 2310;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

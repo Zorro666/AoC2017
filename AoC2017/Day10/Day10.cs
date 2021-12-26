@@ -115,7 +115,7 @@ namespace Day10
             {
                 var result1 = RunSequence(256, lengths);
                 Console.WriteLine($"Day10 : Result1 {result1}");
-                var expected = 6909;
+                var expected = 19591;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -125,7 +125,7 @@ namespace Day10
             {
                 var result2 = KnotHash(lengths);
                 Console.WriteLine($"Day10 : Result2 {result2}");
-                var expected = "9d5f4561367d379cfbf04f8c471c0095";
+                var expected = "62e2204d2ca4f4924f6e7a80f1288786";
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

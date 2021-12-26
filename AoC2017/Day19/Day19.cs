@@ -87,7 +87,7 @@ namespace Day19
             {
                 var result1 = FindRoute();
                 Console.WriteLine($"Day19 : Result1 {result1}");
-                var expected = "AYRPVMEGQ";
+                var expected = "MKXOIHZNBL";
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -97,7 +97,7 @@ namespace Day19
             {
                 var result2 = RouteLength();
                 Console.WriteLine($"Day19 : Result2 {result2}");
-                var expected = 16408;
+                var expected = 17872;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

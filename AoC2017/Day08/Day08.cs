@@ -71,7 +71,7 @@ namespace Day08
             {
                 var result1 = LargestValue;
                 Console.WriteLine($"Day08 : Result1 {result1}");
-                var expected = 6012;
+                var expected = 5075;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -81,7 +81,7 @@ namespace Day08
             {
                 var result2 = LargestEverValue;
                 Console.WriteLine($"Day08 : Result2 {result2}");
-                var expected = 6369;
+                var expected = 7310;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

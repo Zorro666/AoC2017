@@ -121,7 +121,7 @@ namespace Day15
             {
                 var result1 = CountMatches(aStart, bStart);
                 Console.WriteLine($"Day15 : Result1 {result1}");
-                var expected = 573;
+                var expected = 609;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -131,7 +131,7 @@ namespace Day15
             {
                 var result2 = CountMatches2(aStart, bStart);
                 Console.WriteLine($"Day15 : Result2 {result2}");
-                var expected = 294;
+                var expected = 253;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

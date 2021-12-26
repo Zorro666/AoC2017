@@ -81,7 +81,7 @@ namespace Day03
             {
                 var result1 = SpiralSteps(input);
                 Console.WriteLine($"Day03 : Result1 {result1}");
-                var expected = 480;
+                var expected = 438;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -91,7 +91,7 @@ namespace Day03
             {
                 var result2 = SpiralSteps2(input);
                 Console.WriteLine($"Day03 : Result2 {result2}");
-                var expected = 349975;
+                var expected = 266330;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

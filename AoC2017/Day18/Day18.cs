@@ -362,7 +362,7 @@ namespace Day18
             {
                 var result1 = FirstValidRcvFrequency(1024);
                 Console.WriteLine($"Day18 : Result1 {result1}");
-                var expected = 8600;
+                var expected = 3423;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -372,7 +372,7 @@ namespace Day18
             {
                 var result2 = FindDeadlock(1024 * 1024);
                 Console.WriteLine($"Day18 : Result2 {result2}");
-                var expected = 7239;
+                var expected = 7493;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

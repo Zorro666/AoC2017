@@ -62,7 +62,7 @@ namespace Day16
             {
                 var result1 = DanceMoves(moves, 16, 1, true);
                 Console.WriteLine($"Day16 : Result1 {result1}");
-                var expected = "nlciboghjmfdapek";
+                var expected = "glnacbhedpfjkiom";
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -71,7 +71,7 @@ namespace Day16
             else
             {
                 var result2 = DanceMoves(moves, 16, 1000 * 1000 * 1000, false);
-                var expected = "nlciboghmkedpfja";
+                var expected = "fmpanloehgkdcbji";
                 Console.WriteLine($"Day16 : Result2 {result2}");
                 if (result2 != expected)
                 {

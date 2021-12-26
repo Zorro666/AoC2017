@@ -77,7 +77,7 @@ namespace Day17
             {
                 var result1 = SpinLock(stepsPerInsert, 2018);
                 Console.WriteLine($"Day17 : Result1 {result1}");
-                var expected = 1244;
+                var expected = 136;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -87,7 +87,7 @@ namespace Day17
             {
                 var result2 = SpinLock2(stepsPerInsert, 50 * 1000 * 1000);
                 Console.WriteLine($"Day17 : Result2 {result2}");
-                var expected = 11162912;
+                var expected = 1080289;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

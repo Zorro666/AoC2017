@@ -47,7 +47,7 @@ namespace Day04
             {
                 var result1 = CountValidPassphrase(lines);
                 Console.WriteLine($"Day04 : Result1 {result1}");
-                var expected = 325;
+                var expected = 466;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -57,7 +57,7 @@ namespace Day04
             {
                 var result2 = CountValidPassphrase2(lines);
                 Console.WriteLine($"Day04 : Result2 {result2}");
-                var expected = 119;
+                var expected = 251;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
